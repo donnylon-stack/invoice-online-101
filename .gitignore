@@ -1,4 +1,4 @@
-﻿# Logs & Process
+# Logs & Process
 logs
 *.log
 npm-debug.log*
@@ -23,6 +23,8 @@ dist-ssr
 *.token
 *secret*
 *token*
+[dD]okumentasi.md
+DOKUMENTASI.md
 
 # Local Database & User Storage
 data/
