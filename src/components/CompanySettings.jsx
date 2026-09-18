@@ -39,6 +39,19 @@ export default function CompanySettings() {
   const [stampUrl, setStampUrl] = useState(session?.stampUrl || '');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  // User Management Modal states
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userError, setUserError] = useState('');
+  const [userForm, setUserForm] = useState({
+    name: '',
+    username: '',
+    password: '',
+    role: 'Staff Administrasi',
+    email: '',
+    status: 'Aktif'
+  });
+
   // File to Base64 helper
   const handleImageUpload = (e, setter) => {
     const file = e.target.files?.[0];
