@@ -581,7 +581,7 @@ export default function CompanySettings() {
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Tri / Budi Santoso"
+                  placeholder="Nama lengkap user"
                   value={userForm.name}
                   onChange={(e) => setUserForm(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 font-medium"
@@ -600,7 +600,7 @@ export default function CompanySettings() {
                   <input
                     type="text"
                     required
-                    placeholder="tri"
+                    placeholder="username"
                     value={userForm.username}
                     onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/\s+/g, '') }))}
                     className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg font-mono focus:ring-2 focus:ring-brand-500"
@@ -618,7 +618,7 @@ export default function CompanySettings() {
                   <input
                     type="text"
                     required
-                    placeholder="Contoh: 12shutera"
+                    placeholder="Masukkan password akun"
                     value={userForm.password}
                     onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
                     className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg font-mono focus:ring-2 focus:ring-brand-500"
@@ -659,7 +659,7 @@ export default function CompanySettings() {
                 <label className="block font-semibold text-slate-700 mb-1">Email (Opsional)</label>
                 <input
                   type="email"
-                  placeholder="user@homycaremanado.com"
+                  placeholder="user@perusahaan.com"
                   value={userForm.email}
                   onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500"
