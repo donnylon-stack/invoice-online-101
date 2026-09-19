@@ -55,7 +55,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenCreate }) {
           {/* Logo & Company Acronym */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-              <img src="/logo.jpg" alt="Logo" className="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200" />
+              <img src={session?.logoUrl || '/logo.jpg'} alt="Logo" className="w-9 h-9 rounded-xl object-cover shadow-sm border border-slate-200" />
               <div>
                 <span className="font-extrabold text-slate-900 tracking-tight text-base sm:text-lg flex items-center gap-1">
                   Invoice Online <span className="text-brand-600">101</span>
