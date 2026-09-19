@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from './context/AuthContext';
+import { useInvoice } from './context/InvoiceContext';
 import AuthView from './components/AuthView';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -12,9 +13,11 @@ import CompanySettings from './components/CompanySettings';
 import DocumentEditor from './components/DocumentEditor';
 import DocumentPreview from './components/DocumentPreview';
 import MobileBottomNav from './components/MobileBottomNav';
+import OfflineBlocker from './components/OfflineBlocker';
 
 export default function App() {
   const { isAuthenticated } = useAuth();
+  const { cloudStatus, syncWithCloud, isOnline } = useInvoice();
   
   const [activeTab, setActiveTab] = useState('dashboard');
   const [previewDocument, setPreviewDocument] = useState(null);
@@ -23,10 +26,6 @@ export default function App() {
     type: 'INV',
     data: null
   });
-
-  if (!isAuthenticated) {
-    return <AuthView />;
-  }
 
   const handleOpenCreate = (type = 'INV') => {
     setEditorConfig({
@@ -53,7 +52,19 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <>
+      {/* 100% Online Blocker Modal: blocks screen if offline or server is down */}
+      <OfflineBlocker 
+        isOffline={!isOnline} 
+        isServerDown={!cloudStatus?.connected} 
+        message={cloudStatus?.message} 
+        onRetry={syncWithCloud} 
+      />
+
+      {!isAuthenticated ? (
+        <AuthView />
+      ) : (
+        <div className="min-h-screen bg-slate-50 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top Navbar */}
       <Navbar 
         activeTab={activeTab} 
@@ -146,6 +157,9 @@ export default function App() {
           }}
         />
       )}
-    </div>
+        </div>
+      )}
+    </>
   );
 }
+

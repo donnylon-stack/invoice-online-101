@@ -86,8 +86,14 @@ export const supabaseService = {
         linked_quotation_number: inv.linkedQuotationNumber,
         updated_at: new Date().toISOString()
       };
-      const { data, error } = await supabase.from('invoices').upsert(row).select();
-      if (error) throw error;
+      if (inv.companyId && typeof inv.companyId === 'string' && inv.companyId.length === 36) {
+        row.company_id = inv.companyId;
+      }
+      const { data, error } = await supabase.from('invoices').upsert(row, { onConflict: 'number' }).select();
+      if (error) {
+        console.error('Supabase saveInvoice error details:', error);
+        throw error;
+      }
       return data;
     } catch (e) {
       console.warn('Supabase saveInvoice:', e.message);
@@ -95,9 +101,17 @@ export const supabaseService = {
     }
   },
 
-  async deleteInvoice(id) {
+  async deleteInvoice(id, number) {
     try {
-      const { error } = await supabase.from('invoices').delete().eq('id', id);
+      let query = supabase.from('invoices').delete();
+      if (id && typeof id === 'string' && id.length === 36) {
+        query = query.eq('id', id);
+      } else if (number) {
+        query = query.eq('number', number);
+      } else {
+        query = query.eq('id', id);
+      }
+      const { error } = await query;
       if (error) throw error;
       return true;
     } catch (e) {
@@ -167,8 +181,14 @@ export const supabaseService = {
         converted_to_invoice_number: quo.convertedToInvoiceNumber,
         updated_at: new Date().toISOString()
       };
-      const { data, error } = await supabase.from('quotations').upsert(row).select();
-      if (error) throw error;
+      if (quo.companyId && typeof quo.companyId === 'string' && quo.companyId.length === 36) {
+        row.company_id = quo.companyId;
+      }
+      const { data, error } = await supabase.from('quotations').upsert(row, { onConflict: 'number' }).select();
+      if (error) {
+        console.error('Supabase saveQuotation error details:', error);
+        throw error;
+      }
       return data;
     } catch (e) {
       console.warn('Supabase saveQuotation:', e.message);
@@ -176,9 +196,17 @@ export const supabaseService = {
     }
   },
 
-  async deleteQuotation(id) {
+  async deleteQuotation(id, number) {
     try {
-      const { error } = await supabase.from('quotations').delete().eq('id', id);
+      let query = supabase.from('quotations').delete();
+      if (id && typeof id === 'string' && id.length === 36) {
+        query = query.eq('id', id);
+      } else if (number) {
+        query = query.eq('number', number);
+      } else {
+        query = query.eq('id', id);
+      }
+      const { error } = await query;
       if (error) throw error;
       return true;
     } catch (e) {

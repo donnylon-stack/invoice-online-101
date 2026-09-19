@@ -14,7 +14,8 @@ export function InvoiceProvider({ children }) {
   const { session } = useAuth();
   const currentYear = new Date().getFullYear();
 
-  // Cloud Sync Status
+  // Network & Cloud Sync Status (100% Online Enforcement)
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
   const [cloudStatus, setCloudStatus] = useState({
     connected: false,
     tablesReady: false,
@@ -52,32 +53,7 @@ export function InvoiceProvider({ children }) {
     } catch (e) {
       console.error(e);
     }
-    return [
-      {
-        id: 'client-1',
-        name: 'PT Gemilang Kreasi Nusantara',
-        contactPerson: 'Budi Santoso',
-        email: 'finance@gemilangkreasinusantara.co.id',
-        phone: '0813-8899-7711',
-        address: 'Gedung Wisma Niaga Lt. 8, Jl. Gatot Subroto Kav. 12, Jakarta Selatan'
-      },
-      {
-        id: 'client-2',
-        name: 'CV Sinar Mandiri Sejahtera',
-        contactPerson: 'Siti Rahma',
-        email: 'purchasing@sinarmandiri.com',
-        phone: '0821-4455-6677',
-        address: 'Ruko Golden Boulevard Blok C-15, BSD City, Tangerang'
-      },
-      {
-        id: 'client-3',
-        name: 'PT Surya Citra Logistik',
-        contactPerson: 'Hendra Wijaya',
-        email: 'hendra@suryacitralogistik.com',
-        phone: '0857-1122-3344',
-        address: 'Jl. Perak Barat No. 44, Tanjung Perak, Surabaya'
-      }
-    ];
+    return [];
   });
 
   // Catalog of Barang & Jasa (Products & Services)
@@ -88,68 +64,7 @@ export function InvoiceProvider({ children }) {
     } catch (e) {
       console.error(e);
     }
-    return [
-      {
-        id: 'item-1',
-        type: 'JASA',
-        code: 'SRV-WEB-01',
-        name: 'Pengembangan Website & Sistem Custom',
-        category: 'Software & Web',
-        price: 15000000,
-        unit: 'Paket',
-        description: 'Pembuatan aplikasi web frontend & backend responsif dengan integrasi API'
-      },
-      {
-        id: 'item-2',
-        type: 'JASA',
-        code: 'SRV-SRV-02',
-        name: 'Maintenance Cloud Server & Backup Bulanan',
-        category: 'Cloud & DevOps',
-        price: 1500000,
-        unit: 'Bulan',
-        description: 'Pemeliharaan server VPS, pembaruan keamanan, dan backup harian otomatis'
-      },
-      {
-        id: 'item-3',
-        type: 'JASA',
-        code: 'SRV-KNS-03',
-        name: 'Konsultasi IT & Pelatihan Onboarding',
-        category: 'Konsultasi',
-        price: 3000000,
-        unit: 'Sesi',
-        description: 'Sesi pendampingan implementasi sistem dan panduan operasional pengguna'
-      },
-      {
-        id: 'item-4',
-        type: 'BARANG',
-        code: 'PRD-PRN-01',
-        name: 'Printer Thermal Kasir 80mm Auto-Cutter USB+LAN',
-        category: 'Hardware POS',
-        price: 1250000,
-        unit: 'Unit',
-        description: 'Printer cetak struk cepat 250mm/s dengan auto-cutter pisau tahan lama'
-      },
-      {
-        id: 'item-5',
-        type: 'BARANG',
-        code: 'PRD-SCN-02',
-        name: 'Barcode Scanner 2D Wireless Bluetooth & QR Code',
-        category: 'Hardware POS',
-        price: 850000,
-        unit: 'Unit',
-        description: 'Scanner barcode 1D dan 2D QR Code wireless jangkauan hingga 50 meter'
-      },
-      {
-        id: 'item-6',
-        type: 'BARANG',
-        code: 'PRD-KRT-03',
-        name: 'Kertas Thermal Roll 80x80 (1 Box isi 50 Roll)',
-        category: 'Supplies',
-        price: 450000,
-        unit: 'Box',
-        description: 'Kertas struk kasir thermal premium putih pekat, cetakan tajam dan tahan lama'
-      }
-    ];
+    return [];
   });
 
   // Save to localStorage
@@ -168,86 +83,6 @@ export function InvoiceProvider({ children }) {
   useEffect(() => {
     localStorage.setItem(ITEMS_STORAGE, JSON.stringify(catalogItems));
   }, [catalogItems]);
-
-  // Only seed demo documents ONCE on the very first installation, never re-seed when user deletes data
-  useEffect(() => {
-    if (!session?.companyCode) return;
-    const seedFlagKey = `io101_demo_seeded_${session.companyCode}`;
-    const alreadySeeded = localStorage.getItem(seedFlagKey);
-
-    // If already seeded once or user has visited, do NOT generate dummy documents again
-    if (alreadySeeded) return;
-
-    // Check if storage already has data or was explicitly saved as empty
-    const savedInvoicesRaw = localStorage.getItem(INVOICES_STORAGE);
-    const savedQuotationsRaw = localStorage.getItem(QUOTATIONS_STORAGE);
-
-    if (savedInvoicesRaw !== null || savedQuotationsRaw !== null) {
-      localStorage.setItem(seedFlagKey, 'true');
-      return;
-    }
-
-    // Brand new clean first visit only
-    localStorage.setItem(seedFlagKey, 'true');
-    const code = session.companyCode || 'PATH';
-    const sampleDate = new Date().toISOString().split('T')[0];
-    const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    const sampleInvoice = {
-      id: 'inv-' + Date.now(),
-      type: 'INV',
-      number: formatDocumentNumber('INV', code, 1, currentYear),
-      sequenceNumber: 1,
-      companyName: session.companyName,
-      companyCode: code,
-      issueDate: sampleDate,
-      dueDate: dueDate,
-      status: 'PAID', // PAID, UNPAID, DRAFT, CANCELLED
-      client: clients[0],
-      items: [
-        { id: '1', description: 'Pengembangan Aplikasi Web Enterprise & Integrasi API', qty: 1, unit: 'Paket', price: 17500000, discount: 0, total: 17500000 },
-        { id: '2', description: 'Cloud Server Setup & Maintenance Bulanan', qty: 2, unit: 'Bulan', price: 1500000, discount: 10, total: 2700000 }
-      ],
-      subtotal: 20200000,
-      taxPercent: 11,
-      taxAmount: 2222000,
-      discountPercent: 0,
-      discountAmount: 0,
-      grandTotal: 22422000,
-      notes: 'Terima kasih atas kerja samanya. Pembayaran telah lunas diterima.',
-      paymentTerms: 'Transfer Bank BCA no. rek 1234567890 a.n ' + session.companyName,
-      createdAt: new Date().toISOString(),
-    };
-
-    const sampleQuotation = {
-      id: 'quo-' + Date.now(),
-      type: 'QUO',
-      number: formatDocumentNumber('QUO', code, 1, currentYear),
-      sequenceNumber: 1,
-      companyName: session.companyName,
-      companyCode: code,
-      issueDate: sampleDate,
-      validUntil: dueDate,
-      status: 'SENT', // DRAFT, SENT, ACCEPTED, REJECTED
-      client: clients[1],
-      items: [
-        { id: '1', description: 'Paket Layanan SaaS Subscription 1 Tahun (Enterprise)', qty: 1, unit: 'Lisensi', price: 12000000, discount: 5, total: 11400000 },
-        { id: '2', description: 'Training & Onboarding User Tim Internal (2 Hari)', qty: 1, unit: 'Sesi', price: 3000000, discount: 0, total: 3000000 }
-      ],
-      subtotal: 14400000,
-      taxPercent: 11,
-      taxAmount: 1584000,
-      discountPercent: 0,
-      discountAmount: 0,
-      grandTotal: 15984000,
-      notes: 'Penawaran ini berlaku selama 14 hari kalender sejak tanggal diterbitkan.',
-      paymentTerms: 'Term 1: 50% DP setelah PO disetujui, Term 2: 50% setelah serah terima.',
-      createdAt: new Date().toISOString(),
-    };
-
-    setInvoices([sampleInvoice]);
-    setQuotations([sampleQuotation]);
-  }, [session?.companyCode]);
 
   // Helper to generate next document number
   const getNextNumber = (type) => {
@@ -272,16 +107,28 @@ export function InvoiceProvider({ children }) {
     };
   };
 
-  // Sync with Supabase Cloud
+  // Sync with Supabase Cloud (100% Online Mode)
   const syncWithCloud = async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setIsOnline(false);
+      setCloudStatus({
+        connected: false,
+        tablesReady: false,
+        syncing: false,
+        message: 'Koneksi internet terputus (Offline).'
+      });
+      return;
+    }
+
     setCloudStatus(prev => ({ ...prev, syncing: true }));
     try {
       const conn = await supabaseService.testConnection();
       if (!conn.connected) {
-        setCloudStatus({ connected: false, tablesReady: false, syncing: false, message: conn.message });
+        setCloudStatus({ connected: false, tablesReady: false, syncing: false, message: conn.message || 'Gagal terhubung ke database cloud.' });
         return;
       }
 
+      setIsOnline(true);
       if (!conn.tablesReady) {
         setCloudStatus({
           connected: true,
@@ -292,15 +139,57 @@ export function InvoiceProvider({ children }) {
         return;
       }
 
-      // If tables are ready, fetch and merge cloud data
+      // If tables are ready, fetch live cloud data
       const cloudInvoices = await supabaseService.fetchInvoices(session?.companyCode);
       if (Array.isArray(cloudInvoices)) {
-        setInvoices(cloudInvoices);
+        if (cloudInvoices.length > 0) {
+          setInvoices(cloudInvoices);
+        } else {
+          // Jika cloud masih kosong tapi ada invoice lokal, sinkronkan ke cloud agar tersimpan
+          const localSaved = localStorage.getItem(INVOICES_STORAGE);
+          if (localSaved) {
+            try {
+              const parsed = JSON.parse(localSaved);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                for (const inv of parsed) {
+                  await supabaseService.saveInvoice(inv);
+                }
+                const refreshed = await supabaseService.fetchInvoices(session?.companyCode);
+                if (Array.isArray(refreshed) && refreshed.length > 0) {
+                  setInvoices(refreshed);
+                }
+              }
+            } catch (e) {
+              console.warn('Sync local invoices error:', e);
+            }
+          }
+        }
       }
 
       const cloudQuotes = await supabaseService.fetchQuotations(session?.companyCode);
       if (Array.isArray(cloudQuotes)) {
-        setQuotations(cloudQuotes);
+        if (cloudQuotes.length > 0) {
+          setQuotations(cloudQuotes);
+        } else {
+          // Jika cloud masih kosong tapi ada penawaran lokal, sinkronkan ke cloud
+          const localSaved = localStorage.getItem(QUOTATIONS_STORAGE);
+          if (localSaved) {
+            try {
+              const parsed = JSON.parse(localSaved);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                for (const quo of parsed) {
+                  await supabaseService.saveQuotation(quo);
+                }
+                const refreshed = await supabaseService.fetchQuotations(session?.companyCode);
+                if (Array.isArray(refreshed) && refreshed.length > 0) {
+                  setQuotations(refreshed);
+                }
+              }
+            } catch (e) {
+              console.warn('Sync local quotations error:', e);
+            }
+          }
+        }
       }
 
       const cloudItems = await supabaseService.fetchCatalogItems();
@@ -325,17 +214,66 @@ export function InvoiceProvider({ children }) {
     }
   };
 
+  // Continuous connectivity monitoring (100% online)
   useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      syncWithCloud();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setCloudStatus(prev => ({
+        ...prev,
+        connected: false,
+        syncing: false,
+        message: 'Perangkat terputus dari jaringan internet.'
+      }));
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Initial check & interval heartbeat
     syncWithCloud();
+    const interval = setInterval(() => {
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        syncWithCloud();
+      } else {
+        setIsOnline(false);
+      }
+    }, 15000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
+    };
   }, [session?.companyCode]);
 
-  // CRUD for Invoice
+  // Helper UUID generator yang kompatibel dengan kolom UUID Supabase
+  const generateUUID = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  // CRUD for Invoice (Guarded by Online Status)
   const createInvoice = (invoiceData) => {
+    if (typeof navigator !== 'undefined' && (!navigator.onLine || !cloudStatus.connected)) {
+      alert('Aplikasi beroperasi 100% Online. Harap pastikan koneksi internet dan server database aktif untuk menerbitkan invoice.');
+      throw new Error('Aplikasi sedang offline');
+    }
+
     const next = getNextNumber('INV');
     const newInvoice = {
       ...invoiceData,
-      id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      id: generateUUID(),
       type: 'INV',
+      companyId: session?.companyId,
       companyCode: session?.companyCode || 'IO101',
       companyName: session?.companyName || 'Perusahaan',
       sequenceNumber: invoiceData.sequenceNumber || next.sequenceNumber,
@@ -362,18 +300,25 @@ export function InvoiceProvider({ children }) {
   };
 
   const deleteInvoice = (id) => {
+    const target = invoices.find(inv => inv.id === id);
     localStorage.setItem(`io101_demo_seeded_${session?.companyCode || 'default'}`, 'true');
     setInvoices(prev => prev.filter(inv => inv.id !== id));
-    supabaseService.deleteInvoice(id);
+    supabaseService.deleteInvoice(id, target?.number);
   };
 
   // CRUD for Quotation
   const createQuotation = (quotationData) => {
+    if (typeof navigator !== 'undefined' && (!navigator.onLine || !cloudStatus.connected)) {
+      alert('Aplikasi beroperasi 100% Online. Harap pastikan koneksi internet dan server database aktif untuk menerbitkan penawaran.');
+      throw new Error('Aplikasi sedang offline');
+    }
+
     const next = getNextNumber('QUO');
     const newQuotation = {
       ...quotationData,
-      id: 'quo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      id: generateUUID(),
       type: 'QUO',
+      companyId: session?.companyId,
       companyCode: session?.companyCode || 'IO101',
       companyName: session?.companyName || 'Perusahaan',
       sequenceNumber: quotationData.sequenceNumber || next.sequenceNumber,
@@ -400,9 +345,10 @@ export function InvoiceProvider({ children }) {
   };
 
   const deleteQuotation = (id) => {
+    const target = quotations.find(q => q.id === id);
     localStorage.setItem(`io101_demo_seeded_${session?.companyCode || 'default'}`, 'true');
     setQuotations(prev => prev.filter(q => q.id !== id));
-    supabaseService.deleteQuotation(id);
+    supabaseService.deleteQuotation(id, target?.number);
   };
 
   // 1-Click Convert Quotation to Invoice
@@ -416,24 +362,25 @@ export function InvoiceProvider({ children }) {
 
     const newInvoice = {
       type: 'INV',
-      id: 'inv-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      id: generateUUID(),
       number: next.documentNumber,
       sequenceNumber: next.sequenceNumber,
-      companyCode: session?.companyCode || quote.companyCode,
-      companyName: session?.companyName || quote.companyName,
+      companyId: session?.companyId,
+      companyCode: session?.companyCode || 'IO101',
+      companyName: session?.companyName || 'Perusahaan',
       issueDate: today,
       dueDate: dueDate,
       status: 'UNPAID',
       client: quote.client,
-      items: JSON.parse(JSON.stringify(quote.items)),
+      items: quote.items,
       subtotal: quote.subtotal,
-      taxPercent: quote.taxPercent,
-      taxAmount: quote.taxAmount,
       discountPercent: quote.discountPercent,
       discountAmount: quote.discountAmount,
+      taxPercent: quote.taxPercent,
+      taxAmount: quote.taxAmount,
       grandTotal: quote.grandTotal,
-      notes: `Dikonversi dari Penawaran #${quote.number}. ${quote.notes || ''}`,
-      paymentTerms: quote.paymentTerms || '',
+      notes: quote.notes || `Dikonversi dari Penawaran nomor ${quote.number}`,
+      paymentTerms: quote.paymentTerms,
       linkedQuotationNumber: quote.number,
       createdAt: new Date().toISOString()
     };
@@ -441,8 +388,8 @@ export function InvoiceProvider({ children }) {
     setInvoices(prev => [newInvoice, ...prev]);
     supabaseService.saveInvoice(newInvoice);
 
-    // Update quotation status to ACCEPTED
-    updateQuotation(quote.id, {
+    // Update status quotation to ACCEPTED
+    updateQuotation(quotationId, {
       status: 'ACCEPTED',
       convertedToInvoiceNumber: newInvoice.number
     });
@@ -514,6 +461,7 @@ export function InvoiceProvider({ children }) {
 
   return (
     <InvoiceContext.Provider value={{
+      isOnline,
       invoices,
       quotations,
       clients,

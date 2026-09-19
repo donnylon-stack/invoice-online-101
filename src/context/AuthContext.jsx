@@ -112,6 +112,7 @@ export function AuthProvider({ children }) {
 
     const userSession = {
       userId: user.id,
+      companyId: company.id,
       companyMatch: normalizeCompany(company.name),
       companyName: company.name,
       companyCode: company.code,
@@ -156,6 +157,7 @@ export function AuthProvider({ children }) {
 
     const userSession = {
       userId: user.id,
+      companyId: comp.id,
       companyMatch: normalizeCompany(comp.name),
       companyName: comp.name,
       companyCode: comp.code,
