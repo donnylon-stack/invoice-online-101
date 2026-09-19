@@ -432,15 +432,35 @@ export function InvoiceProvider({ children }) {
     return newInvoice;
   };
 
-  // Client Management
+  // Client Management CRUD
   const addClient = (clientData) => {
     const newClient = {
       ...clientData,
-      id: 'client-' + Date.now()
+      id: 'client-' + Date.now(),
+      createdAt: new Date().toISOString()
     };
     setClients(prev => [...prev, newClient]);
     supabaseService.saveClient(newClient);
     return newClient;
+  };
+
+  const updateClient = (id, updatedData) => {
+    setClients(prev => {
+      const nextList = prev.map(c => {
+        if (c.id === id) {
+          const updated = { ...c, ...updatedData, updatedAt: new Date().toISOString() };
+          supabaseService.saveClient(updated);
+          return updated;
+        }
+        return c;
+      });
+      return nextList;
+    });
+  };
+
+  const deleteClient = (id) => {
+    setClients(prev => prev.filter(c => c.id !== id));
+    supabaseService.deleteClient(id);
   };
 
   // Catalog (Barang & Jasa) CRUD
@@ -491,6 +511,8 @@ export function InvoiceProvider({ children }) {
       deleteQuotation,
       convertQuotationToInvoice,
       addClient,
+      updateClient,
+      deleteClient,
       addCatalogItem,
       updateCatalogItem,
       deleteCatalogItem

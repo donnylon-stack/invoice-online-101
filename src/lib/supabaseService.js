@@ -281,6 +281,17 @@ export const supabaseService = {
     }
   },
 
+  async deleteClient(id) {
+    try {
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn('Supabase deleteClient:', e.message);
+      return false;
+    }
+  },
+
   // ==========================================
   // DIRECT CLIENT AUTHENTICATION (SUPABASE)
   // ==========================================
