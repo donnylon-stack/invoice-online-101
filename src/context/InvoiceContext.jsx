@@ -169,69 +169,85 @@ export function InvoiceProvider({ children }) {
     localStorage.setItem(ITEMS_STORAGE, JSON.stringify(catalogItems));
   }, [catalogItems]);
 
-  // If user just logged in with new company code and list is empty, seed demo documents with their code
+  // Only seed demo documents ONCE on the very first installation, never re-seed when user deletes data
   useEffect(() => {
-    if (session && invoices.length === 0 && quotations.length === 0) {
-      const code = session.companyCode || 'PATH';
-      const sampleDate = new Date().toISOString().split('T')[0];
-      const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    if (!session?.companyCode) return;
+    const seedFlagKey = `io101_demo_seeded_${session.companyCode}`;
+    const alreadySeeded = localStorage.getItem(seedFlagKey);
 
-      const sampleInvoice = {
-        id: 'inv-' + Date.now(),
-        type: 'INV',
-        number: formatDocumentNumber('INV', code, 1, currentYear),
-        sequenceNumber: 1,
-        companyName: session.companyName,
-        companyCode: code,
-        issueDate: sampleDate,
-        dueDate: dueDate,
-        status: 'PAID', // PAID, UNPAID, DRAFT, CANCELLED
-        client: clients[0],
-        items: [
-          { id: '1', description: 'Pengembangan Aplikasi Web Enterprise & Integrasi API', qty: 1, unit: 'Paket', price: 17500000, discount: 0, total: 17500000 },
-          { id: '2', description: 'Cloud Server Setup & Maintenance Bulanan', qty: 2, unit: 'Bulan', price: 1500000, discount: 10, total: 2700000 }
-        ],
-        subtotal: 20200000,
-        taxPercent: 11,
-        taxAmount: 2222000,
-        discountPercent: 0,
-        discountAmount: 0,
-        grandTotal: 22422000,
-        notes: 'Terima kasih atas kerja samanya. Pembayaran telah lunas diterima.',
-        paymentTerms: 'Transfer Bank BCA no. rek 1234567890 a.n ' + session.companyName,
-        createdAt: new Date().toISOString(),
-      };
+    // If already seeded once or user has visited, do NOT generate dummy documents again
+    if (alreadySeeded) return;
 
-      const sampleQuotation = {
-        id: 'quo-' + Date.now(),
-        type: 'QUO',
-        number: formatDocumentNumber('QUO', code, 1, currentYear),
-        sequenceNumber: 1,
-        companyName: session.companyName,
-        companyCode: code,
-        issueDate: sampleDate,
-        validUntil: dueDate,
-        status: 'SENT', // DRAFT, SENT, ACCEPTED, REJECTED
-        client: clients[1],
-        items: [
-          { id: '1', description: 'Paket Layanan SaaS Subscription 1 Tahun (Enterprise)', qty: 1, unit: 'Lisensi', price: 12000000, discount: 5, total: 11400000 },
-          { id: '2', description: 'Training & Onboarding User Tim Internal (2 Hari)', qty: 1, unit: 'Sesi', price: 3000000, discount: 0, total: 3000000 }
-        ],
-        subtotal: 14400000,
-        taxPercent: 11,
-        taxAmount: 1584000,
-        discountPercent: 0,
-        discountAmount: 0,
-        grandTotal: 15984000,
-        notes: 'Penawaran ini berlaku selama 14 hari kalender sejak tanggal diterbitkan.',
-        paymentTerms: 'Term 1: 50% DP setelah PO disetujui, Term 2: 50% setelah serah terima.',
-        createdAt: new Date().toISOString(),
-      };
+    // Check if storage already has data or was explicitly saved as empty
+    const savedInvoicesRaw = localStorage.getItem(INVOICES_STORAGE);
+    const savedQuotationsRaw = localStorage.getItem(QUOTATIONS_STORAGE);
 
-      setInvoices([sampleInvoice]);
-      setQuotations([sampleQuotation]);
+    if (savedInvoicesRaw !== null || savedQuotationsRaw !== null) {
+      localStorage.setItem(seedFlagKey, 'true');
+      return;
     }
-  }, [session]);
+
+    // Brand new clean first visit only
+    localStorage.setItem(seedFlagKey, 'true');
+    const code = session.companyCode || 'PATH';
+    const sampleDate = new Date().toISOString().split('T')[0];
+    const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const sampleInvoice = {
+      id: 'inv-' + Date.now(),
+      type: 'INV',
+      number: formatDocumentNumber('INV', code, 1, currentYear),
+      sequenceNumber: 1,
+      companyName: session.companyName,
+      companyCode: code,
+      issueDate: sampleDate,
+      dueDate: dueDate,
+      status: 'PAID', // PAID, UNPAID, DRAFT, CANCELLED
+      client: clients[0],
+      items: [
+        { id: '1', description: 'Pengembangan Aplikasi Web Enterprise & Integrasi API', qty: 1, unit: 'Paket', price: 17500000, discount: 0, total: 17500000 },
+        { id: '2', description: 'Cloud Server Setup & Maintenance Bulanan', qty: 2, unit: 'Bulan', price: 1500000, discount: 10, total: 2700000 }
+      ],
+      subtotal: 20200000,
+      taxPercent: 11,
+      taxAmount: 2222000,
+      discountPercent: 0,
+      discountAmount: 0,
+      grandTotal: 22422000,
+      notes: 'Terima kasih atas kerja samanya. Pembayaran telah lunas diterima.',
+      paymentTerms: 'Transfer Bank BCA no. rek 1234567890 a.n ' + session.companyName,
+      createdAt: new Date().toISOString(),
+    };
+
+    const sampleQuotation = {
+      id: 'quo-' + Date.now(),
+      type: 'QUO',
+      number: formatDocumentNumber('QUO', code, 1, currentYear),
+      sequenceNumber: 1,
+      companyName: session.companyName,
+      companyCode: code,
+      issueDate: sampleDate,
+      validUntil: dueDate,
+      status: 'SENT', // DRAFT, SENT, ACCEPTED, REJECTED
+      client: clients[1],
+      items: [
+        { id: '1', description: 'Paket Layanan SaaS Subscription 1 Tahun (Enterprise)', qty: 1, unit: 'Lisensi', price: 12000000, discount: 5, total: 11400000 },
+        { id: '2', description: 'Training & Onboarding User Tim Internal (2 Hari)', qty: 1, unit: 'Sesi', price: 3000000, discount: 0, total: 3000000 }
+      ],
+      subtotal: 14400000,
+      taxPercent: 11,
+      taxAmount: 1584000,
+      discountPercent: 0,
+      discountAmount: 0,
+      grandTotal: 15984000,
+      notes: 'Penawaran ini berlaku selama 14 hari kalender sejak tanggal diterbitkan.',
+      paymentTerms: 'Term 1: 50% DP setelah PO disetujui, Term 2: 50% setelah serah terima.',
+      createdAt: new Date().toISOString(),
+    };
+
+    setInvoices([sampleInvoice]);
+    setQuotations([sampleQuotation]);
+  }, [session?.companyCode]);
 
   // Helper to generate next document number
   const getNextNumber = (type) => {
@@ -278,22 +294,22 @@ export function InvoiceProvider({ children }) {
 
       // If tables are ready, fetch and merge cloud data
       const cloudInvoices = await supabaseService.fetchInvoices(session?.companyCode);
-      if (cloudInvoices && cloudInvoices.length > 0) {
+      if (Array.isArray(cloudInvoices)) {
         setInvoices(cloudInvoices);
       }
 
       const cloudQuotes = await supabaseService.fetchQuotations(session?.companyCode);
-      if (cloudQuotes && cloudQuotes.length > 0) {
+      if (Array.isArray(cloudQuotes)) {
         setQuotations(cloudQuotes);
       }
 
       const cloudItems = await supabaseService.fetchCatalogItems();
-      if (cloudItems && cloudItems.length > 0) {
+      if (Array.isArray(cloudItems) && cloudItems.length > 0) {
         setCatalogItems(cloudItems);
       }
 
       const cloudClients = await supabaseService.fetchClients();
-      if (cloudClients && cloudClients.length > 0) {
+      if (Array.isArray(cloudClients) && cloudClients.length > 0) {
         setClients(cloudClients);
       }
 
@@ -346,6 +362,7 @@ export function InvoiceProvider({ children }) {
   };
 
   const deleteInvoice = (id) => {
+    localStorage.setItem(`io101_demo_seeded_${session?.companyCode || 'default'}`, 'true');
     setInvoices(prev => prev.filter(inv => inv.id !== id));
     supabaseService.deleteInvoice(id);
   };
@@ -383,6 +400,7 @@ export function InvoiceProvider({ children }) {
   };
 
   const deleteQuotation = (id) => {
+    localStorage.setItem(`io101_demo_seeded_${session?.companyCode || 'default'}`, 'true');
     setQuotations(prev => prev.filter(q => q.id !== id));
     supabaseService.deleteQuotation(id);
   };

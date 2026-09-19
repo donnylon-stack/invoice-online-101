@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useInvoice } from '../context/InvoiceContext';
 import { formatRupiah, formatDateIndo, angkaTerbilang } from '../utils/currency';
@@ -13,13 +13,19 @@ import {
   Building2,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Download,
+  Loader2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function DocumentPreview({ document, onBack, onEdit }) {
   const { session } = useAuth();
   const { updateInvoice, convertQuotationToInvoice } = useInvoice();
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const documentRef = useRef(null);
 
   if (!document) return null;
 
@@ -29,6 +35,77 @@ export default function DocumentPreview({ document, onBack, onEdit }) {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleSavePdf = async () => {
+    if (!documentRef.current || isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+
+    try {
+      const element = documentRef.current;
+
+      // Render elemen ke canvas resolusi tinggi (scale 2 untuk hasil tajam & jernih)
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 1024,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('printable-document-sheet');
+          if (el) {
+            el.style.width = '800px';
+            el.style.maxWidth = '800px';
+            el.style.borderRadius = '0px';
+            el.style.boxShadow = 'none';
+            el.style.border = 'none';
+            el.style.padding = '32px';
+            el.style.margin = '0 auto';
+          }
+        }
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+
+      // Standar dokumen PDF A4 (210 x 297 mm)
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Halaman pertama
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pdfHeight;
+
+      // Halaman tambahan jika isi dokumen melebihi 1 halaman A4
+      while (heightLeft > 0) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pdfHeight;
+      }
+
+      // Bersihkan nama file dari karakter ilegal
+      const cleanDocNumber = (document.number || 'Dokumen').replace(/[/\\?%*:|"<>]/g, '-');
+      const fileName = `${isQuotation ? 'Penawaran' : 'Invoice'}_${cleanDocNumber}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Gagal membuat file PDF:', error);
+      alert('Terjadi kendala saat menghasilkan file PDF secara instan. Mengalihkan ke jendela cetak/PDF sistem...');
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const handleMarkPaid = () => {
@@ -148,19 +225,44 @@ export default function DocumentPreview({ document, onBack, onEdit }) {
             </button>
           )}
 
-          {/* Print / Save PDF */}
+          {/* Tombol Cetak Dokumen (Printer Dialog) */}
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
+            title="Cetak via printer fisik atau dialog cetak sistem"
           >
             <Printer className="w-4 h-4" />
-            Cetak / Simpan PDF
+            <span>Cetak</span>
+          </button>
+
+          {/* Tombol Simpan PDF (Direct Download PDF File) */}
+          <button
+            onClick={handleSavePdf}
+            disabled={isGeneratingPdf}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 transition active:scale-95"
+            title="Download langsung dokumen sebagai file PDF"
+          >
+            {isGeneratingPdf ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Membuat PDF...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span>Simpan PDF</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
       {/* The Printable A4 Sheet */}
-      <div className="print-page max-w-4xl mx-auto bg-white p-4 sm:p-8 md:p-12 rounded-2xl shadow-xl border border-slate-200 relative overflow-hidden">
+      <div 
+        ref={documentRef}
+        id="printable-document-sheet"
+        className="print-page max-w-4xl mx-auto bg-white p-4 sm:p-8 md:p-12 rounded-2xl shadow-xl border border-slate-200 relative overflow-hidden"
+      >
         
         {/* Watermark Stamp */}
         {isPaid && (

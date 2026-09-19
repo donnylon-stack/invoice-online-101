@@ -371,7 +371,10 @@ export const supabaseService = {
           accountHolder: companyData.account_holder || companyData.company_name
         },
         signatureName: companyData.signature_name || matchedUser.name,
-        signatureTitle: companyData.signature_title || matchedUser.role
+        signatureTitle: companyData.signature_title || matchedUser.role,
+        logoUrl: companyData.logo_url || '/logo.jpg',
+        signatureUrl: companyData.signature_url || '',
+        stampUrl: companyData.stamp_url || ''
       }
     };
   },
@@ -437,9 +440,47 @@ export const supabaseService = {
           accountHolder: companyData.account_holder || companyData.company_name
         },
         signatureName: companyData.signature_name || name,
-        signatureTitle: companyData.signature_title || 'Owner / Direktur'
+        signatureTitle: companyData.signature_title || 'Owner / Direktur',
+        logoUrl: companyData.logo_url || '/logo.jpg',
+        signatureUrl: companyData.signature_url || '',
+        stampUrl: companyData.stamp_url || ''
       }
     };
+  },
+
+  // Company Profile Update in Supabase
+  async updateCompanyProfile(companyCode, profileData) {
+    try {
+      const payload = {
+        company_name: profileData.companyName,
+        company_code: profileData.companyCode,
+        phone: profileData.phone,
+        email: profileData.email,
+        address: profileData.address,
+        bank_name: profileData.bankInfo?.bankName,
+        account_number: profileData.bankInfo?.accountNumber,
+        account_holder: profileData.bankInfo?.accountHolder,
+        signature_name: profileData.signatureName,
+        signature_title: profileData.signatureTitle,
+        logo_url: profileData.logoUrl,
+        signature_url: profileData.signatureUrl,
+        stamp_url: profileData.stampUrl
+      };
+
+      let query = supabase.from('companies').update(payload);
+      if (profileData.companyId) {
+        query = query.eq('id', profileData.companyId);
+      } else {
+        query = query.eq('company_code', companyCode);
+      }
+
+      const { data, error } = await query.select();
+      if (error) throw error;
+      return data && data[0];
+    } catch (e) {
+      console.warn('Supabase updateCompanyProfile error:', e.message);
+      return null;
+    }
   },
 
   // User Management CRUD

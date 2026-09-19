@@ -122,7 +122,9 @@ export function AuthProvider({ children }) {
       provider: user.provider || 'password',
       phone: company.phone || '0812-4567-8901',
       address: company.address || 'Manado, Sulawesi Utara',
-      logoUrl: '/logo.jpg',
+      logoUrl: company.logoUrl || '/logo.jpg',
+      signatureUrl: company.signatureUrl || '',
+      stampUrl: company.stampUrl || '',
       bankInfo: company.bankInfo || {
         bankName: 'BCA',
         accountNumber: '7890123456',
@@ -165,7 +167,9 @@ export function AuthProvider({ children }) {
       provider: 'google',
       phone: comp.phone || '0812-4567-8901',
       address: comp.address || 'Manado, Sulawesi Utara',
-      logoUrl: '/logo.jpg',
+      logoUrl: comp.logoUrl || '/logo.jpg',
+      signatureUrl: comp.signatureUrl || '',
+      stampUrl: comp.stampUrl || '',
       bankInfo: comp.bankInfo || {
         bankName: 'BCA',
         accountNumber: '7890123456',
@@ -185,16 +189,23 @@ export function AuthProvider({ children }) {
       const { supabase } = await import('../lib/supabase');
       await supabase.auth.signOut();
     } catch (e) {
-      // ignore
+      console.warn('Supabase signOut notice:', e.message);
     }
+    localStorage.removeItem(SESSION_KEY);
     setSession(null);
   };
 
   const updateProfile = (updatedData) => {
-    setSession(prev => ({
-      ...prev,
-      ...updatedData
-    }));
+    setSession(prev => {
+      const next = {
+        ...prev,
+        ...updatedData
+      };
+      if (next.companyCode) {
+        supabaseService.updateCompanyProfile(next.companyCode, next);
+      }
+      return next;
+    });
   };
 
   // --- CRUD USER MANAGEMENT (DIRECT SUPABASE CLIENT) ---
