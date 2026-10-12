@@ -11,7 +11,8 @@ import {
   PlusCircle, 
   FileText, 
   Send,
-  RefreshCw 
+  RefreshCw,
+  Crown
 } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, onOpenCreate }) {
@@ -66,6 +67,19 @@ export default function Navbar({ activeTab, setActiveTab, onOpenCreate }) {
               </div>
             </div>
 
+            {/* Super Admin Badge */}
+            {session?.isSuperAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('companies')}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-full text-[10px] sm:text-xs font-black shadow-sm transition tracking-wider active:scale-95"
+                title="Super Admin Aktif - Klik untuk Kelola Perusahaan"
+              >
+                <Crown className="w-3 h-3 text-amber-300" />
+                <span>SUPER ADMIN</span>
+              </button>
+            )}
+
             {/* Company Badge */}
             {session && (
               <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-brand-50 border border-brand-200/60 rounded-full text-xs text-brand-800">
@@ -91,6 +105,21 @@ export default function Navbar({ activeTab, setActiveTab, onOpenCreate }) {
 
           {/* Quick Create Buttons & PWA & User Profile */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Super Admin Quick Button */}
+            {session?.isSuperAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('companies')}
+                className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-xs ${
+                  activeTab === 'companies'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80'
+                }`}
+              >
+                <Building className="w-3.5 h-3.5" />
+                <span>Kelola Perusahaan</span>
+              </button>
+            )}
             {/* Quick Action Button */}
             <div className="relative inline-block text-left">
               <button

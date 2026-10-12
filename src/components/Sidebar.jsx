@@ -5,19 +5,23 @@ import {
   Send, 
   Users, 
   Settings, 
-  Plus,
-  Sparkles,
-  Package
+  Plus, 
+  Sparkles, 
+  Package,
+  Building2,
+  Crown
 } from 'lucide-react';
 import { useInvoice } from '../context/InvoiceContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ activeTab, setActiveTab, onOpenCreate }) {
+  const { session, companies } = useAuth();
   const { invoices, quotations, clients, catalogItems } = useInvoice();
 
   const unpaidCount = invoices.filter(i => i.status === 'UNPAID').length;
   const pendingQuoteCount = quotations.filter(q => q.status === 'SENT' || q.status === 'DRAFT').length;
 
-  const menuItems = [
+  const baseMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'invoices', label: 'Daftar Invoice', icon: FileText, badge: unpaidCount > 0 ? unpaidCount : null, badgeColor: 'bg-amber-500' },
     { id: 'quotations', label: 'Penawaran Harga', icon: Send, badge: pendingQuoteCount > 0 ? pendingQuoteCount : null, badgeColor: 'bg-cyan-500' },
@@ -25,6 +29,19 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenCreate }) {
     { id: 'clients', label: 'Daftar Klien', icon: Users, count: clients.length },
     { id: 'settings', label: 'Profil Perusahaan', icon: Settings },
   ];
+
+  const menuItems = session?.isSuperAdmin
+    ? [
+        { 
+          id: 'companies', 
+          label: 'Kelola Perusahaan', 
+          icon: Building2, 
+          count: companies?.length || 0,
+          isSuperAdminItem: true 
+        },
+        ...baseMenuItems
+      ]
+    : baseMenuItems;
 
   return (
     <aside className="hidden md:flex md:w-64 bg-white border-r border-slate-200/80 p-4 flex-col justify-between shrink-0 no-print">
@@ -62,12 +79,12 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenCreate }) {
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                   isActive 
-                    ? 'bg-brand-50 text-brand-700 font-bold' 
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? (item.isSuperAdminItem ? 'bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 font-bold border border-indigo-200/60' : 'bg-brand-50 text-brand-700 font-bold') 
+                    : (item.isSuperAdminItem ? 'text-indigo-950 bg-indigo-50/40 hover:bg-indigo-50 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900')
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? (item.isSuperAdminItem ? 'text-indigo-600' : 'text-brand-600') : (item.isSuperAdminItem ? 'text-indigo-500' : 'text-slate-400')}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge !== undefined && item.badge !== null && (
@@ -76,7 +93,9 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenCreate }) {
                   </span>
                 )}
                 {item.count !== undefined && (
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                    item.isSuperAdminItem ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'
+                  }`}>
                     {item.count}
                   </span>
                 )}

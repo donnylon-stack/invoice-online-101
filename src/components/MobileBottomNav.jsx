@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -19,7 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { useInvoice } from '../context/InvoiceContext';
 
 export default function MobileBottomNav({ activeTab, setActiveTab, onOpenCreate }) {
-  const { session, logout } = useAuth();
+  const { session, logout, companies } = useAuth();
   const { invoices, quotations, clients, catalogItems, cloudStatus, syncWithCloud } = useInvoice();
 
   const [showMenuDrawer, setShowMenuDrawer] = useState(false);
@@ -245,6 +245,28 @@ export default function MobileBottomNav({ activeTab, setActiveTab, onOpenCreate 
               <div className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Menu Manajemen
               </div>
+
+              {session?.isSuperAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleTabClick('companies')}
+                  className={`w-full flex items-center justify-between p-3 rounded-2xl text-xs font-semibold transition ${
+                    activeTab === 'companies' 
+                      ? 'bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 font-bold border border-indigo-200' 
+                      : 'text-indigo-950 bg-indigo-50/40 hover:bg-indigo-50 border border-indigo-100'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <span>Kelola Perusahaan (Master HQ)</span>
+                  </div>
+                  <span className="text-[10px] font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+                    {companies?.length || 0}
+                  </span>
+                </button>
+              )}
 
               <button
                 type="button"

@@ -278,6 +278,125 @@ app.post('/api/auth/google', async (req, res) => {
 });
 
 // ==========================================
+// 2C. SUPER ADMIN AUTHENTICATION
+// ==========================================
+app.post('/api/auth/superadmin', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const normUser = (username || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
+
+    if (!normUser || !cleanPassword) {
+      return res.status(400).json({ error: 'Username dan Password Super Admin wajib diisi!' });
+    }
+
+    // Cek di database
+    const allUsers = await getCompanyUsersFromDatabase();
+    const saUser = allUsers.find(u => {
+      const isSA = (u.role || '').toLowerCase().includes('super admin') || u.is_super_admin === true;
+      return isSA && u.username?.toLowerCase() === normUser && u.password === cleanPassword;
+    });
+
+    if (saUser) {
+      return res.json({
+        success: true,
+        user: {
+          id: saUser.id,
+          name: saUser.name || 'Super Administrator',
+          username: saUser.username,
+          role: 'Super Admin',
+          email: saUser.email || 'superadmin@invoiceonline101.com',
+          isSuperAdmin: true
+        }
+      });
+    }
+
+    // Master fallback
+    const validUsers = ['superadmin', 'admin', 'root'];
+    const validPass = ['superadmin101', 'superadmin123', 'admin101'];
+    if (validUsers.includes(normUser) && validPass.includes(cleanPassword)) {
+      return res.json({
+        success: true,
+        user: {
+          id: 'usr-superadmin-master',
+          name: 'Super Administrator HQ',
+          username: normUser,
+          role: 'Super Admin',
+          email: 'superadmin@invoiceonline101.com',
+          isSuperAdmin: true
+        }
+      });
+    }
+
+    return res.status(401).json({ error: 'Kredensial Super Admin tidak valid.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// 2D. COMPANY MANAGEMENT (CRUD MULTI-TENANT)
+// ==========================================
+app.get('/api/companies', async (req, res) => {
+  try {
+    const { data: companies, error } = await supabase.from('companies').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json(companies || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/companies', async (req, res) => {
+  try {
+    const payload = req.body;
+    const row = {
+      company_name: payload.company_name?.trim(),
+      company_code: payload.company_code?.toUpperCase()?.trim(),
+      phone: payload.phone || '',
+      email: payload.email || '',
+      address: payload.address || '',
+      bank_name: payload.bank_name || 'BCA',
+      account_number: payload.account_number || '',
+      account_holder: payload.account_holder || payload.company_name,
+      signature_name: payload.signature_name || '',
+      signature_title: payload.signature_title || 'Owner / Direktur',
+      logo_url: payload.logo_url || '/logo.jpg',
+      created_at: new Date().toISOString()
+    };
+    const { data, error } = await supabase.from('companies').insert(row).select();
+    if (error) throw error;
+    res.json(data ? data[0] : row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/companies/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const { data, error } = await supabase.from('companies').update(updates).eq('id', id).select();
+    if (error) throw error;
+    res.json(data ? data[0] : updates);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/companies/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await supabase.from('company_users').delete().eq('company_id', id);
+    const { error } = await supabase.from('companies').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
 // 3. USER MANAGEMENT (CRUD DI DATABASE)
 // ==========================================
 app.get('/api/users', async (req, res) => {
