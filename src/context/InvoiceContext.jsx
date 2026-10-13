@@ -5,14 +5,12 @@ import { supabaseService } from '../lib/supabaseService';
 
 const InvoiceContext = createContext();
 
-const INVOICES_STORAGE = 'io101_invoices_data';
-const QUOTATIONS_STORAGE = 'io101_quotations_data';
-const CLIENTS_STORAGE = 'io101_clients_data';
-const ITEMS_STORAGE = 'io101_items_data';
-
 export function InvoiceProvider({ children }) {
   const { session } = useAuth();
   const currentYear = new Date().getFullYear();
+
+  // Helper storage key scoped to active company
+  const getCompKey = () => session?.companyId || session?.companyCode || 'guest';
 
   // Network & Cloud Sync Status (100% Online Enforcement)
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
@@ -23,10 +21,11 @@ export function InvoiceProvider({ children }) {
     message: 'Memeriksa koneksi cloud...'
   });
 
-  // Load or seed invoices
+  // Load tenant-isolated invoices
   const [invoices, setInvoices] = useState(() => {
+    if (!session) return [];
     try {
-      const saved = localStorage.getItem(INVOICES_STORAGE);
+      const saved = localStorage.getItem(`io101_invoices_${session.companyId || session.companyCode}`);
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -34,10 +33,11 @@ export function InvoiceProvider({ children }) {
     return [];
   });
 
-  // Load or seed quotations
+  // Load tenant-isolated quotations
   const [quotations, setQuotations] = useState(() => {
+    if (!session) return [];
     try {
-      const saved = localStorage.getItem(QUOTATIONS_STORAGE);
+      const saved = localStorage.getItem(`io101_quotations_${session.companyId || session.companyCode}`);
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -45,10 +45,11 @@ export function InvoiceProvider({ children }) {
     return [];
   });
 
-  // Clients database
+  // Load tenant-isolated clients
   const [clients, setClients] = useState(() => {
+    if (!session) return [];
     try {
-      const saved = localStorage.getItem(CLIENTS_STORAGE);
+      const saved = localStorage.getItem(`io101_clients_${session.companyId || session.companyCode}`);
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -56,10 +57,11 @@ export function InvoiceProvider({ children }) {
     return [];
   });
 
-  // Catalog of Barang & Jasa (Products & Services)
+  // Load tenant-isolated catalog of Barang & Jasa
   const [catalogItems, setCatalogItems] = useState(() => {
+    if (!session) return [];
     try {
-      const saved = localStorage.getItem(ITEMS_STORAGE);
+      const saved = localStorage.getItem(`io101_items_${session.companyId || session.companyCode}`);
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -67,22 +69,69 @@ export function InvoiceProvider({ children }) {
     return [];
   });
 
-  // Save to localStorage
+  // Reload isolated data whenever active company changes or user logs in/out
   useEffect(() => {
-    localStorage.setItem(INVOICES_STORAGE, JSON.stringify(invoices));
-  }, [invoices]);
+    if (!session) {
+      setInvoices([]);
+      setQuotations([]);
+      setClients([]);
+      setCatalogItems([]);
+      return;
+    }
+
+    const compKey = session.companyId || session.companyCode;
+    try {
+      const savedInv = localStorage.getItem(`io101_invoices_${compKey}`);
+      setInvoices(savedInv ? JSON.parse(savedInv) : []);
+    } catch (e) { setInvoices([]); }
+
+    try {
+      const savedQuo = localStorage.getItem(`io101_quotations_${compKey}`);
+      setQuotations(savedQuo ? JSON.parse(savedQuo) : []);
+    } catch (e) { setQuotations([]); }
+
+    try {
+      const savedCli = localStorage.getItem(`io101_clients_${compKey}`);
+      setClients(savedCli ? JSON.parse(savedCli) : []);
+    } catch (e) { setClients([]); }
+
+    try {
+      const savedItm = localStorage.getItem(`io101_items_${compKey}`);
+      setCatalogItems(savedItm ? JSON.parse(savedItm) : []);
+    } catch (e) { setCatalogItems([]); }
+
+    // Fetch fresh tenant data from cloud
+    syncWithCloud();
+  }, [session?.companyId, session?.companyCode]);
+
+  // Save to tenant-scoped localStorage
+  useEffect(() => {
+    if (session) {
+      const compKey = session.companyId || session.companyCode;
+      localStorage.setItem(`io101_invoices_${compKey}`, JSON.stringify(invoices));
+    }
+  }, [invoices, session?.companyId, session?.companyCode]);
 
   useEffect(() => {
-    localStorage.setItem(QUOTATIONS_STORAGE, JSON.stringify(quotations));
-  }, [quotations]);
+    if (session) {
+      const compKey = session.companyId || session.companyCode;
+      localStorage.setItem(`io101_quotations_${compKey}`, JSON.stringify(quotations));
+    }
+  }, [quotations, session?.companyId, session?.companyCode]);
 
   useEffect(() => {
-    localStorage.setItem(CLIENTS_STORAGE, JSON.stringify(clients));
-  }, [clients]);
+    if (session) {
+      const compKey = session.companyId || session.companyCode;
+      localStorage.setItem(`io101_clients_${compKey}`, JSON.stringify(clients));
+    }
+  }, [clients, session?.companyId, session?.companyCode]);
 
   useEffect(() => {
-    localStorage.setItem(ITEMS_STORAGE, JSON.stringify(catalogItems));
-  }, [catalogItems]);
+    if (session) {
+      const compKey = session.companyId || session.companyCode;
+      localStorage.setItem(`io101_items_${compKey}`, JSON.stringify(catalogItems));
+    }
+  }, [catalogItems, session?.companyId, session?.companyCode]);
 
   // Helper to generate next document number
   const getNextNumber = (type) => {
@@ -91,7 +140,7 @@ export function InvoiceProvider({ children }) {
     
     // Filter documents matching current year and company code
     const currentYearDocs = list.filter(d => 
-      d.companyCode === code && 
+      (d.companyCode === code || d.companyId === session?.companyId) && 
       new Date(d.issueDate || d.createdAt).getFullYear() === currentYear
     );
 
@@ -107,7 +156,7 @@ export function InvoiceProvider({ children }) {
     };
   };
 
-  // Sync with Supabase Cloud (100% Online Mode)
+  // Sync with Supabase Cloud (Tenant-Isolated 100% Online Mode)
   const syncWithCloud = async () => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       setIsOnline(false);
@@ -139,66 +188,36 @@ export function InvoiceProvider({ children }) {
         return;
       }
 
-      // If tables are ready, fetch live cloud data
-      const cloudInvoices = await supabaseService.fetchInvoices(session?.companyCode);
+      const compCode = session?.companyCode;
+      const compId = session?.companyId;
+
+      if (!compCode && !compId && !session?.isSuperadmin) {
+        setInvoices([]);
+        setQuotations([]);
+        setClients([]);
+        setCatalogItems([]);
+        setCloudStatus({ connected: true, tablesReady: true, syncing: false, message: 'Silakan login perusahaan.' });
+        return;
+      }
+
+      // If tables are ready, fetch live cloud data strictly for THIS company
+      const cloudInvoices = await supabaseService.fetchInvoices(compCode, compId);
       if (Array.isArray(cloudInvoices)) {
-        if (cloudInvoices.length > 0) {
-          setInvoices(cloudInvoices);
-        } else {
-          // Jika cloud masih kosong tapi ada invoice lokal, sinkronkan ke cloud agar tersimpan
-          const localSaved = localStorage.getItem(INVOICES_STORAGE);
-          if (localSaved) {
-            try {
-              const parsed = JSON.parse(localSaved);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                for (const inv of parsed) {
-                  await supabaseService.saveInvoice(inv);
-                }
-                const refreshed = await supabaseService.fetchInvoices(session?.companyCode);
-                if (Array.isArray(refreshed) && refreshed.length > 0) {
-                  setInvoices(refreshed);
-                }
-              }
-            } catch (e) {
-              console.warn('Sync local invoices error:', e);
-            }
-          }
-        }
+        setInvoices(cloudInvoices);
       }
 
-      const cloudQuotes = await supabaseService.fetchQuotations(session?.companyCode);
+      const cloudQuotes = await supabaseService.fetchQuotations(compCode, compId);
       if (Array.isArray(cloudQuotes)) {
-        if (cloudQuotes.length > 0) {
-          setQuotations(cloudQuotes);
-        } else {
-          // Jika cloud masih kosong tapi ada penawaran lokal, sinkronkan ke cloud
-          const localSaved = localStorage.getItem(QUOTATIONS_STORAGE);
-          if (localSaved) {
-            try {
-              const parsed = JSON.parse(localSaved);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                for (const quo of parsed) {
-                  await supabaseService.saveQuotation(quo);
-                }
-                const refreshed = await supabaseService.fetchQuotations(session?.companyCode);
-                if (Array.isArray(refreshed) && refreshed.length > 0) {
-                  setQuotations(refreshed);
-                }
-              }
-            } catch (e) {
-              console.warn('Sync local quotations error:', e);
-            }
-          }
-        }
+        setQuotations(cloudQuotes);
       }
 
-      const cloudItems = await supabaseService.fetchCatalogItems();
-      if (Array.isArray(cloudItems) && cloudItems.length > 0) {
+      const cloudItems = await supabaseService.fetchCatalogItems(compCode, compId);
+      if (Array.isArray(cloudItems)) {
         setCatalogItems(cloudItems);
       }
 
-      const cloudClients = await supabaseService.fetchClients();
-      if (Array.isArray(cloudClients) && cloudClients.length > 0) {
+      const cloudClients = await supabaseService.fetchClients(compCode, compId);
+      if (Array.isArray(cloudClients)) {
         setClients(cloudClients);
       }
 
@@ -206,7 +225,7 @@ export function InvoiceProvider({ children }) {
         connected: true,
         tablesReady: true,
         syncing: false,
-        message: 'Tersinkronisasi dengan Cloud Database',
+        message: `Tersinkronisasi (${session?.companyName || 'Cloud'})`,
         lastSynced: new Date().toLocaleTimeString('id-ID')
       });
     } catch (err) {
@@ -248,7 +267,7 @@ export function InvoiceProvider({ children }) {
       window.removeEventListener('offline', handleOffline);
       clearInterval(interval);
     };
-  }, [session?.companyCode]);
+  }, [session?.companyCode, session?.companyId]);
 
   // Helper UUID generator yang kompatibel dengan kolom UUID Supabase
   const generateUUID = () => {
@@ -401,11 +420,13 @@ export function InvoiceProvider({ children }) {
   const addClient = (clientData) => {
     const newClient = {
       ...clientData,
-      id: 'client-' + Date.now(),
+      id: generateUUID(),
+      companyId: session?.companyId,
+      companyCode: session?.companyCode,
       createdAt: new Date().toISOString()
     };
     setClients(prev => [...prev, newClient]);
-    supabaseService.saveClient(newClient);
+    supabaseService.saveClient(newClient, session?.companyCode, session?.companyId);
     return newClient;
   };
 
@@ -413,8 +434,14 @@ export function InvoiceProvider({ children }) {
     setClients(prev => {
       const nextList = prev.map(c => {
         if (c.id === id) {
-          const updated = { ...c, ...updatedData, updatedAt: new Date().toISOString() };
-          supabaseService.saveClient(updated);
+          const updated = { 
+            ...c, 
+            ...updatedData, 
+            companyId: c.companyId || session?.companyId,
+            companyCode: c.companyCode || session?.companyCode,
+            updatedAt: new Date().toISOString() 
+          };
+          supabaseService.saveClient(updated, session?.companyCode, session?.companyId);
           return updated;
         }
         return c;
@@ -432,11 +459,13 @@ export function InvoiceProvider({ children }) {
   const addCatalogItem = (itemData) => {
     const newItem = {
       ...itemData,
-      id: 'item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      id: generateUUID(),
+      companyId: session?.companyId,
+      companyCode: session?.companyCode,
       createdAt: new Date().toISOString()
     };
     setCatalogItems(prev => [newItem, ...prev]);
-    supabaseService.saveCatalogItem(newItem);
+    supabaseService.saveCatalogItem(newItem, session?.companyCode, session?.companyId);
     return newItem;
   };
 
@@ -444,8 +473,14 @@ export function InvoiceProvider({ children }) {
     setCatalogItems(prev => {
       const nextList = prev.map(item => {
         if (item.id === id) {
-          const updated = { ...item, ...updatedData, updatedAt: new Date().toISOString() };
-          supabaseService.saveCatalogItem(updated);
+          const updated = { 
+            ...item, 
+            ...updatedData, 
+            companyId: item.companyId || session?.companyId,
+            companyCode: item.companyCode || session?.companyCode,
+            updatedAt: new Date().toISOString() 
+          };
+          supabaseService.saveCatalogItem(updated, session?.companyCode, session?.companyId);
           return updated;
         }
         return item;

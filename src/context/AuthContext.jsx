@@ -57,18 +57,28 @@ export function AuthProvider({ children }) {
     return name.trim().toLowerCase().replace(/\s+/g, '');
   };
 
-  // Fetch users from Supabase when logged in
+  // Fetch users from Supabase strictly for active company (or all if superadmin)
   useEffect(() => {
-    if (session?.companyCode) {
+    if (!session) {
+      setAllUsers([]);
+      return;
+    }
+    if (session.isSuperadmin) {
+      supabaseService.fetchUsers('ALL')
+        .then(users => {
+          if (Array.isArray(users)) setAllUsers(users);
+        })
+        .catch(err => console.warn('Fetch Supabase users warning:', err.message));
+    } else if (session.companyCode) {
       supabaseService.fetchUsers(session.companyCode)
         .then(users => {
-          if (Array.isArray(users) && users.length > 0) {
+          if (Array.isArray(users)) {
             setAllUsers(users);
           }
         })
         .catch(err => console.warn('Fetch Supabase users warning:', err.message));
     }
-  }, [session]);
+  }, [session?.companyCode, session?.isSuperadmin]);
 
   // Listen for Supabase OAuth callback (e.g. from Google sign-in redirect)
   useEffect(() => {
@@ -238,7 +248,13 @@ export function AuthProvider({ children }) {
       console.warn('Supabase signOut notice:', e.message);
     }
     localStorage.removeItem(SESSION_KEY);
+    // Bersihkan legacy storage jika masih tersisa
+    localStorage.removeItem('io101_invoices_data');
+    localStorage.removeItem('io101_quotations_data');
+    localStorage.removeItem('io101_clients_data');
+    localStorage.removeItem('io101_items_data');
     setSession(null);
+    setAllUsers([]);
   };
 
   const updateProfile = (updatedData) => {

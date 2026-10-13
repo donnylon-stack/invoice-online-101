@@ -26,10 +26,12 @@ export const supabaseService = {
   },
 
   // Invoices
-  async fetchInvoices(companyCode) {
+  async fetchInvoices(companyCode, companyId) {
     try {
       let query = supabase.from('invoices').select('*').order('created_at', { ascending: false });
-      if (companyCode) {
+      if (companyId && companyId !== 'ALL') {
+        query = query.eq('company_id', companyId);
+      } else if (companyCode && companyCode !== 'ALL') {
         query = query.eq('company_code', companyCode);
       }
       const { data, error } = await query;
@@ -38,6 +40,7 @@ export const supabaseService = {
         id: row.id,
         number: row.number,
         sequenceNumber: row.sequence_number,
+        companyId: row.company_id,
         companyCode: row.company_code,
         companyName: row.company_name,
         issueDate: row.issue_date,
@@ -58,7 +61,7 @@ export const supabaseService = {
       }));
     } catch (e) {
       console.warn('Supabase fetchInvoices:', e.message);
-      return null;
+      return [];
     }
   },
 
@@ -68,6 +71,7 @@ export const supabaseService = {
         id: (inv.id && typeof inv.id === 'string' && inv.id.length === 36) ? inv.id : undefined, // only if UUID
         number: inv.number,
         sequence_number: Number(inv.sequenceNumber) || 1,
+        company_id: (inv.companyId && typeof inv.companyId === 'string' && inv.companyId.length === 36) ? inv.companyId : undefined,
         company_code: inv.companyCode,
         company_name: inv.companyName,
         issue_date: inv.issueDate,
@@ -86,9 +90,6 @@ export const supabaseService = {
         linked_quotation_number: inv.linkedQuotationNumber,
         updated_at: new Date().toISOString()
       };
-      if (inv.companyId && typeof inv.companyId === 'string' && inv.companyId.length === 36) {
-        row.company_id = inv.companyId;
-      }
       const { data, error } = await supabase.from('invoices').upsert(row, { onConflict: 'number' }).select();
       if (error) {
         console.error('Supabase saveInvoice error details:', error);
@@ -121,10 +122,12 @@ export const supabaseService = {
   },
 
   // Quotations
-  async fetchQuotations(companyCode) {
+  async fetchQuotations(companyCode, companyId) {
     try {
       let query = supabase.from('quotations').select('*').order('created_at', { ascending: false });
-      if (companyCode) {
+      if (companyId && companyId !== 'ALL') {
+        query = query.eq('company_id', companyId);
+      } else if (companyCode && companyCode !== 'ALL') {
         query = query.eq('company_code', companyCode);
       }
       const { data, error } = await query;
@@ -133,6 +136,7 @@ export const supabaseService = {
         id: row.id,
         number: row.number,
         sequenceNumber: row.sequence_number,
+        companyId: row.company_id,
         companyCode: row.company_code,
         companyName: row.company_name,
         issueDate: row.issue_date,
@@ -153,7 +157,7 @@ export const supabaseService = {
       }));
     } catch (e) {
       console.warn('Supabase fetchQuotations:', e.message);
-      return null;
+      return [];
     }
   },
 
@@ -163,6 +167,7 @@ export const supabaseService = {
         id: (quo.id && typeof quo.id === 'string' && quo.id.length === 36) ? quo.id : undefined,
         number: quo.number,
         sequence_number: Number(quo.sequenceNumber) || 1,
+        company_id: (quo.companyId && typeof quo.companyId === 'string' && quo.companyId.length === 36) ? quo.companyId : undefined,
         company_code: quo.companyCode,
         company_name: quo.companyName,
         issue_date: quo.issueDate,
@@ -181,9 +186,6 @@ export const supabaseService = {
         converted_to_invoice_number: quo.convertedToInvoiceNumber,
         updated_at: new Date().toISOString()
       };
-      if (quo.companyId && typeof quo.companyId === 'string' && quo.companyId.length === 36) {
-        row.company_id = quo.companyId;
-      }
       const { data, error } = await supabase.from('quotations').upsert(row, { onConflict: 'number' }).select();
       if (error) {
         console.error('Supabase saveQuotation error details:', error);
@@ -216,12 +218,20 @@ export const supabaseService = {
   },
 
   // Catalog Items
-  async fetchCatalogItems() {
+  async fetchCatalogItems(companyCode, companyId) {
     try {
-      const { data, error } = await supabase.from('catalog_items').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('catalog_items').select('*').order('created_at', { ascending: false });
+      if (companyId && companyId !== 'ALL') {
+        query = query.eq('company_id', companyId);
+      } else if (companyCode && companyCode !== 'ALL') {
+        query = query.eq('company_code', companyCode);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return (data || []).map(row => ({
         id: row.id,
+        companyId: row.company_id,
+        companyCode: row.company_code,
         type: row.type,
         code: row.code,
         name: row.name,
@@ -233,14 +243,16 @@ export const supabaseService = {
       }));
     } catch (e) {
       console.warn('Supabase fetchCatalogItems:', e.message);
-      return null;
+      return [];
     }
   },
 
-  async saveCatalogItem(item) {
+  async saveCatalogItem(item, companyCode, companyId) {
     try {
       const row = {
         id: (item.id && typeof item.id === 'string' && item.id.length === 36) ? item.id : undefined,
+        company_id: (item.companyId && typeof item.companyId === 'string' && item.companyId.length === 36) ? item.companyId : (companyId || undefined),
+        company_code: item.companyCode || companyCode || undefined,
         type: item.type,
         code: item.code,
         name: item.name,
@@ -271,12 +283,20 @@ export const supabaseService = {
   },
 
   // Clients
-  async fetchClients() {
+  async fetchClients(companyCode, companyId) {
     try {
-      const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('clients').select('*').order('created_at', { ascending: false });
+      if (companyId && companyId !== 'ALL') {
+        query = query.eq('company_id', companyId);
+      } else if (companyCode && companyCode !== 'ALL') {
+        query = query.eq('company_code', companyCode);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return (data || []).map(row => ({
         id: row.id,
+        companyId: row.company_id,
+        companyCode: row.company_code,
         name: row.name,
         contactPerson: row.contact_person,
         email: row.email,
@@ -286,14 +306,16 @@ export const supabaseService = {
       }));
     } catch (e) {
       console.warn('Supabase fetchClients:', e.message);
-      return null;
+      return [];
     }
   },
 
-  async saveClient(client) {
+  async saveClient(client, companyCode, companyId) {
     try {
       const row = {
         id: (client.id && typeof client.id === 'string' && client.id.length === 36) ? client.id : undefined,
+        company_id: (client.companyId && typeof client.companyId === 'string' && client.companyId.length === 36) ? client.companyId : (companyId || undefined),
+        company_code: client.companyCode || companyCode || undefined,
         name: client.name,
         contact_person: client.contactPerson,
         email: client.email,
