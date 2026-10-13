@@ -452,7 +452,7 @@ export default function SuperAdminConsole() {
       {/* TAB 1: MANAJEMEN PERUSAHAAN (COMPANIES CRUD)              */}
       {/* ========================================================= */}
       {activeTab === 'companies' && (
-        <div className="space-y-4">
+        <div className="space-y-4 text-slate-900">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-slate-800">Daftar Seluruh Perusahaan Multi-Tenant</h2>
@@ -604,7 +604,7 @@ export default function SuperAdminConsole() {
       {/* TAB 2: MANAJEMEN USER PERUSAHAAN (USERS CRUD)             */}
       {/* ========================================================= */}
       {activeTab === 'users' && (
-        <div className="space-y-4">
+        <div className="space-y-4 text-slate-900">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-slate-800">Daftar Akun Pengguna Semua Perusahaan</h2>
@@ -618,11 +618,11 @@ export default function SuperAdminConsole() {
               <select
                 value={selectedCompanyFilter}
                 onChange={(e) => setSelectedCompanyFilter(e.target.value)}
-                className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
               >
-                <option value="ALL">Semua Perusahaan ({allUsers?.length || 0})</option>
+                <option value="ALL" className="text-slate-900 bg-white">Semua Perusahaan ({allUsers?.length || 0})</option>
                 {(companies || []).map(c => (
-                  <option key={c.id} value={c.id || c.company_code}>
+                  <option key={c.id} value={c.id || c.company_code} className="text-slate-900 bg-white">
                     {c.company_name} ({c.company_code})
                   </option>
                 ))}
@@ -735,7 +735,7 @@ export default function SuperAdminConsole() {
       {/* ========================================================= */}
       {companyModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
+          <div className="bg-white text-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold">
@@ -757,7 +757,7 @@ export default function SuperAdminConsole() {
               </button>
             </div>
 
-            <form onSubmit={handleCompanySubmit} className="p-6 space-y-4 text-xs max-h-[80vh] overflow-y-auto">
+            <form onSubmit={handleCompanySubmit} className="p-6 space-y-4 text-xs text-slate-900 max-h-[80vh] overflow-y-auto">
               {errorMessage && (
                 <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
                   {errorMessage}
@@ -781,7 +781,7 @@ export default function SuperAdminConsole() {
                         companyCode: prev.companyCode ? prev.companyCode : generateCompanyAcronym(val)
                       }));
                     }}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 font-medium"
+                    className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
                 <div>
@@ -791,7 +791,7 @@ export default function SuperAdminConsole() {
                     placeholder="PATH"
                     value={companyForm.companyCode}
                     onChange={(e) => setCompanyForm(prev => ({ ...prev, companyCode: e.target.value.toUpperCase() }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono font-bold uppercase"
+                    className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-mono font-bold uppercase text-slate-900 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
               </div>
@@ -805,7 +805,7 @@ export default function SuperAdminConsole() {
                     placeholder="0812-3456-7890"
                     value={companyForm.phone}
                     onChange={(e) => setCompanyForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
                 <div>
@@ -815,7 +815,7 @@ export default function SuperAdminConsole() {
                     placeholder="kontak@perusahaan.com"
                     value={companyForm.email}
                     onChange={(e) => setCompanyForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
               </div>
@@ -828,7 +828,7 @@ export default function SuperAdminConsole() {
                   placeholder="Jl. Sam Ratulangi No. 101, Manado, Sulawesi Utara"
                   value={companyForm.address}
                   onChange={(e) => setCompanyForm(prev => ({ ...prev, address: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 placeholder:text-slate-400 shadow-sm"
                 />
               </div>
 
@@ -843,7 +843,7 @@ export default function SuperAdminConsole() {
                       placeholder="BCA / Mandiri / BRI"
                       value={companyForm.bankName}
                       onChange={(e) => setCompanyForm(prev => ({ ...prev, bankName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 font-semibold"
+                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-semibold text-slate-900 placeholder:text-slate-400 shadow-sm"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -853,7 +853,7 @@ export default function SuperAdminConsole() {
                       placeholder="7890123456"
                       value={companyForm.accountNumber}
                       onChange={(e) => setCompanyForm(prev => ({ ...prev, accountNumber: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono"
+                      className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-mono text-slate-900 placeholder:text-slate-400 shadow-sm"
                     />
                   </div>
                 </div>
@@ -885,7 +885,7 @@ export default function SuperAdminConsole() {
       {/* ========================================================= */}
       {userModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
+          <div className="bg-white text-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold">
@@ -907,7 +907,7 @@ export default function SuperAdminConsole() {
               </button>
             </div>
 
-            <form onSubmit={handleUserSubmit} className="p-6 space-y-4 text-xs">
+            <form onSubmit={handleUserSubmit} className="p-6 space-y-4 text-xs text-slate-900">
               {errorMessage && (
                 <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
                   {errorMessage}
@@ -929,12 +929,12 @@ export default function SuperAdminConsole() {
                       companyCode: c?.company_code || prev.companyCode
                     }));
                   }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 font-semibold text-slate-800"
+                  className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-semibold text-slate-900 shadow-sm"
                   required
                 >
-                  <option value="">-- Pilih Perusahaan --</option>
+                  <option value="" className="text-slate-900 bg-white">-- Pilih Perusahaan --</option>
                   {(companies || []).map(c => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} className="text-slate-900 bg-white">
                       {c.company_name} ({c.company_code})
                     </option>
                   ))}
@@ -950,7 +950,7 @@ export default function SuperAdminConsole() {
                   placeholder="Nama lengkap pegawai"
                   value={userForm.name}
                   onChange={(e) => setUserForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 font-medium"
+                  className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
                 />
               </div>
 
@@ -964,7 +964,7 @@ export default function SuperAdminConsole() {
                     placeholder="username"
                     value={userForm.username}
                     onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value.toLowerCase().trim() }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono"
+                    className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-mono text-slate-900 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
                 <div>
@@ -975,7 +975,7 @@ export default function SuperAdminConsole() {
                     placeholder="••••••••"
                     value={userForm.password}
                     onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono"
+                    className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-mono text-slate-900 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
               </div>
@@ -987,13 +987,13 @@ export default function SuperAdminConsole() {
                   <select
                     value={userForm.role}
                     onChange={(e) => setUserForm(prev => ({ ...prev, role: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-semibold text-slate-900 shadow-sm"
                   >
-                    <option value="Admin / Owner">Admin / Owner</option>
-                    <option value="Bagian Keuangan (Finance)">Bagian Keuangan (Finance)</option>
-                    <option value="Staff Administrasi">Staff Administrasi</option>
-                    <option value="Kasir">Kasir</option>
-                    <option value="Superadmin">Superadmin</option>
+                    <option value="Admin / Owner" className="text-slate-900 bg-white">Admin / Owner</option>
+                    <option value="Bagian Keuangan (Finance)" className="text-slate-900 bg-white">Bagian Keuangan (Finance)</option>
+                    <option value="Staff Administrasi" className="text-slate-900 bg-white">Staff Administrasi</option>
+                    <option value="Kasir" className="text-slate-900 bg-white">Kasir</option>
+                    <option value="Superadmin" className="text-slate-900 bg-white">Superadmin</option>
                   </select>
                 </div>
                 <div>
@@ -1001,10 +1001,10 @@ export default function SuperAdminConsole() {
                   <select
                     value={userForm.status}
                     onChange={(e) => setUserForm(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-amber-500 font-semibold text-slate-900 shadow-sm"
                   >
-                    <option value="Aktif">Aktif</option>
-                    <option value="Nonaktif">Nonaktif (Suspend)</option>
+                    <option value="Aktif" className="text-slate-900 bg-white">Aktif</option>
+                    <option value="Nonaktif" className="text-slate-900 bg-white">Nonaktif (Suspend)</option>
                   </select>
                 </div>
               </div>

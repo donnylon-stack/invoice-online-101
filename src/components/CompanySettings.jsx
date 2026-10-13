@@ -708,7 +708,7 @@ export default function CompanySettings() {
       {/* MODAL TAMBAH / EDIT USER */}
       {userModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-white text-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -733,7 +733,7 @@ export default function CompanySettings() {
               </button>
             </div>
 
-            <form onSubmit={handleUserFormSubmit} className="p-6 space-y-4 text-xs">
+            <form onSubmit={handleUserFormSubmit} className="p-6 space-y-4 text-xs text-slate-900">
               
               {userError && (
                 <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
@@ -750,7 +750,7 @@ export default function CompanySettings() {
                   placeholder="Nama lengkap user"
                   value={userForm.name}
                   onChange={(e) => setUserForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 font-medium"
+                  className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-brand-500 font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
                 />
               </div>
 
@@ -769,7 +769,7 @@ export default function CompanySettings() {
                     placeholder="username"
                     value={userForm.username}
                     onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/\s+/g, '') }))}
-                    className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg font-mono focus:ring-2 focus:ring-brand-500"
+                    className="w-full pl-8 pr-3 py-2 border border-slate-300 bg-white rounded-lg font-mono focus:ring-2 focus:ring-brand-500 text-slate-900 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
               </div>
@@ -787,7 +787,7 @@ export default function CompanySettings() {
                     placeholder="Masukkan password akun"
                     value={userForm.password}
                     onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg font-mono focus:ring-2 focus:ring-brand-500"
+                    className="w-full pl-9 pr-3 py-2 border border-slate-300 bg-white rounded-lg font-mono focus:ring-2 focus:ring-brand-500 text-slate-900 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
               </div>
@@ -799,12 +799,12 @@ export default function CompanySettings() {
                   <select
                     value={userForm.role}
                     onChange={(e) => setUserForm(prev => ({ ...prev, role: e.target.value }))}
-                    className="w-full px-2.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white"
+                    className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white text-slate-900 font-semibold shadow-sm"
                   >
-                    <option value="Admin / Owner">Admin / Owner</option>
-                    <option value="Bagian Keuangan (Finance)">Bagian Keuangan</option>
-                    <option value="Staff Administrasi">Staff Administrasi</option>
-                    <option value="Operator">Operator</option>
+                    <option value="Admin / Owner" className="text-slate-900 bg-white">Admin / Owner</option>
+                    <option value="Bagian Keuangan (Finance)" className="text-slate-900 bg-white">Bagian Keuangan</option>
+                    <option value="Staff Administrasi" className="text-slate-900 bg-white">Staff Administrasi</option>
+                    <option value="Operator" className="text-slate-900 bg-white">Operator</option>
                   </select>
                 </div>
                 <div>
@@ -812,10 +812,10 @@ export default function CompanySettings() {
                   <select
                     value={userForm.status}
                     onChange={(e) => setUserForm(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full px-2.5 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white font-medium"
+                    className="w-full px-2.5 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white text-slate-900 font-semibold shadow-sm"
                   >
-                    <option value="Aktif">Aktif</option>
-                    <option value="Nonaktif">Nonaktif</option>
+                    <option value="Aktif" className="text-slate-900 bg-white">Aktif</option>
+                    <option value="Nonaktif" className="text-slate-900 bg-white">Nonaktif</option>
                   </select>
                 </div>
               </div>
@@ -828,7 +828,7 @@ export default function CompanySettings() {
                   placeholder="user@perusahaan.com"
                   value={userForm.email}
                   onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500"
+                  className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-brand-500 text-slate-900 placeholder:text-slate-400 shadow-sm"
                 />
               </div>
 

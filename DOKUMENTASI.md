@@ -423,3 +423,9 @@ ON CONFLICT DO NOTHING;
       - Menyediakan dialog modal interaktif untuk mengubah kata sandi akun Super Admin (input Password Lama, Password Baru min. 4 karakter, dan Konfirmasi Password).
       - Terintegrasi langsung dengan database Supabase Cloud melalui fungsi `changeSuperadminPassword` pada [`src/lib/supabaseService.js`](file:///D:/Web%20Project/invoice-online-101/src/lib/supabaseService.js) dan [`src/context/AuthContext.jsx`](file:///D:/Web%20Project/invoice-online-101/src/context/AuthContext.jsx), yang memperbarui kolom `password` pada tabel `company_users`.
       - Validasi ketat diterapkan sehingga setelah kata sandi diubah, sistem langsung menerapkan kata sandi baru untuk login berikutnya.
+  - **Perbaikan Kontras Teks pada Modal Form Input (Bug Teks Tidak Terbaca):**
+    - **Masalah:** Pada dialog modal Edit/Tambah Akun Pengguna dan Edit/Tambah Perusahaan, teks yang diketik atau dipilih pada kolom Nama Lengkap, Username, Password, Role, dan Status berwarna putih di atas latar belakang putih karena pewarisan kelas `text-slate-100` dari root container.
+    - **Solusi:**
+      1. Menambahkan aturan global `@layer base` pada [`src/index.css`](file:///D:/Web%20Project/invoice-online-101/src/index.css) sehingga seluruh elemen `input`, `select`, dan `textarea` secara default memiliki warna teks gelap pekat (`color: #0f172a;`).
+      2. Memberikan kelas styling eksplisit `text-slate-900 bg-white border-slate-300 placeholder:text-slate-400 font-medium shadow-sm` pada seluruh input dan dropdown select di [`src/components/SuperAdminConsole.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/SuperAdminConsole.jsx) dan [`src/components/CompanySettings.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/CompanySettings.jsx).
+      3. Menetapkan `text-slate-900` pada kontainer modal dan tab konten konsol agar teks formulir memiliki kontras tinggi dan 100% terbaca dengan jelas di layar smartphone maupun desktop.

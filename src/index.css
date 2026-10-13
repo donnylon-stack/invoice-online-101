@@ -6,6 +6,13 @@
   body {
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+
+  /* Default form input text colors to avoid invisible white-on-white text */
+  input,
+  select,
+  textarea {
+    color: #0f172a;
+  }
 }
 
 /* Custom print media styles for pixel-perfect PDF / Printing */
