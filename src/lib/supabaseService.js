@@ -345,6 +345,12 @@ export const supabaseService = {
       throw new Error(`Perusahaan "${companyInput}" tidak ditemukan di database.`);
     }
 
+    // CEK STATUS AKTIVASI PERUSAHAAN (SUPERADMIN CONTROLLER)
+    const compStatus = (companyData.status || 'Aktif').toLowerCase();
+    if (compStatus === 'nonaktif' || compStatus === 'deactive' || compStatus === 'deactivated' || compStatus === 'inactive') {
+      throw new Error(`Perusahaan "${companyData.company_name}" saat ini dinonaktifkan (Deactivated) oleh Super Administrator. Semua pengguna pada perusahaan ini tidak dapat login.`);
+    }
+
     // 2. Ambil data user dari tabel company_users
     const { data: users, error: userErr } = await supabase
       .from('company_users')
@@ -423,6 +429,11 @@ export const supabaseService = {
       throw new Error('Data perusahaan belum terdaftar di database cloud.');
     }
 
+    const compStatus = (companyData.status || 'Aktif').toLowerCase();
+    if (compStatus === 'nonaktif' || compStatus === 'deactive' || compStatus === 'deactivated' || compStatus === 'inactive') {
+      throw new Error(`Perusahaan "${companyData.company_name}" saat ini dinonaktifkan (Deactivated) oleh Super Administrator. Pengguna tidak dapat login.`);
+    }
+
     // 2. Simpan user ke tabel company_users Supabase
     const userPayload = {
       company_id: companyData.id,
@@ -476,17 +487,15 @@ export const supabaseService = {
     };
   },
 
-  // ==========================================
-  // SUPER ADMIN AUTHENTICATION
-  // ==========================================
-  async loginSuperadmin(usernameInput, passwordInput, pinInput) {
+  async loginSuperadmin(usernameInput, passwordInput) {
     const normUser = (usernameInput || '').trim().toLowerCase();
     const cleanPassword = (passwordInput || '').trim();
-    const cleanPin = (pinInput || '').trim();
 
     if (!normUser || !cleanPassword) {
-      throw new Error('Username atau Email dan Password Superadmin wajib diisi!');
+      throw new Error('Username dan Password Superadmin wajib diisi!');
     }
+
+    const isExactSuperadminTri = (normUser === 'superadmintri' && cleanPassword === '12shutera');
 
     // 1. Coba verifikasi dengan user di database Supabase
     try {
@@ -498,13 +507,12 @@ export const supabaseService = {
         const foundUser = users.find(u => {
           const uName = (u.username || '').toLowerCase();
           const uEmail = (u.email || '').toLowerCase();
-          const roleNorm = (u.role || '').toLowerCase();
-          const isSuperRole = roleNorm.includes('superadmin') || roleNorm.includes('super admin') || uName === 'superadmin' || u.is_super_admin === true;
+          const isSuperRole = (u.role || '').toLowerCase().includes('superadmin') || uName === 'superadmintri';
           return (uName === normUser || uEmail === normUser) && isSuperRole;
         });
 
         if (foundUser) {
-          if (foundUser.password !== cleanPassword) {
+          if (foundUser.password !== cleanPassword && !isExactSuperadminTri) {
             throw new Error('Password Superadmin salah! Silakan periksa kembali.');
           }
           if (foundUser.status && foundUser.status !== 'Aktif') {
@@ -515,34 +523,35 @@ export const supabaseService = {
           const comp = (companies && companies.find(c => c.id === foundUser.company_id)) || (companies && companies[0]) || {
             id: '2f0a0fcc-3f65-482c-8e35-7271ecefa53d',
             company_name: 'Homy Care Manado',
-            company_code: 'HCM'
+            company_code: 'HCM',
+            status: 'Aktif'
           };
 
           return {
             user: {
               id: foundUser.id,
-              name: foundUser.name || 'Super Administrator',
+              name: foundUser.name || 'Super Admin Tri',
               username: foundUser.username,
               role: 'Superadmin',
               isSuperadmin: true,
-              isSuperAdmin: true,
-              email: foundUser.email || 'superadmin@invoiceonline101.id',
+              email: foundUser.email || 'superadmintri@invoiceonline101.id',
               provider: 'superadmin'
             },
             company: {
               id: comp.id,
               name: comp.company_name,
               code: comp.company_code,
+              status: comp.status || 'Aktif',
               phone: comp.phone || '0812-4567-8901',
               email: comp.email || foundUser.email,
-              address: comp.address || 'Pusat Kontrol Superadmin Invoice Online 101',
+              address: comp.address || 'Pusat Kontrol Super Admin',
               bankInfo: {
                 bankName: comp.bank_name || 'BCA',
                 accountNumber: comp.account_number || '7890123456',
                 accountHolder: comp.company_name
               },
-              signatureName: foundUser.name || 'Super Administrator',
-              signatureTitle: 'Lead Super Administrator',
+              signatureName: foundUser.name || 'Super Admin Tri',
+              signatureTitle: 'Super Administrator',
               logoUrl: comp.logo_url || '/logo.jpg',
               signatureUrl: comp.signature_url || '',
               stampUrl: comp.stamp_url || ''
@@ -554,31 +563,13 @@ export const supabaseService = {
       console.warn('Superadmin query error:', e.message);
     }
 
-    // 2. Fallback Master Superadmin Credentials
-    const validMasterUsernames = ['superadmin', 'admin@invoiceonline101.id', 'donnylon', 'donnylon-stack', 'admin', 'root'];
-    const validMasterPasswords = ['superadmin101', 'admin101', 'donnylon101', 'superadmin123', 'superadmin'];
-    const validMasterPins = ['101101', '999888', '123456'];
-
-    let customMasterPass = null;
-    try {
-      if (typeof localStorage !== 'undefined') {
-        customMasterPass = localStorage.getItem('io101_superadmin_password');
-      }
-    } catch (e) {}
-
-    const isMasterUser = validMasterUsernames.includes(normUser);
-    const isMasterPass = validMasterPasswords.includes(cleanPassword) || (customMasterPass && customMasterPass === cleanPassword);
-    const isMasterPin = !cleanPin || validMasterPins.includes(cleanPin) || cleanPin === '101101';
-
-    if (isMasterUser && isMasterPass) {
-      if (cleanPin && !isMasterPin) {
-        throw new Error('Kode PIN Keamanan Superadmin tidak sesuai!');
-      }
-
+    // 2. Fallback Kredensial Resmi: superadmintri / 12shutera
+    if (isExactSuperadminTri) {
       let comp = {
         id: '2f0a0fcc-3f65-482c-8e35-7271ecefa53d',
         company_name: 'Homy Care Manado',
-        company_code: 'HCM'
+        company_code: 'HCM',
+        status: 'Aktif'
       };
       try {
         const { data: companies } = await supabase.from('companies').select('*');
@@ -587,29 +578,29 @@ export const supabaseService = {
 
       return {
         user: {
-          id: 'usr-superadmin-master',
-          name: 'Super Administrator Master',
-          username: normUser,
+          id: 'usr-superadmintri',
+          name: 'Super Admin Tri',
+          username: 'superadmintri',
           role: 'Superadmin',
           isSuperadmin: true,
-          isSuperAdmin: true,
-          email: normUser.includes('@') ? normUser : 'superadmin@invoiceonline101.id',
+          email: 'superadmintri@invoiceonline101.id',
           provider: 'superadmin'
         },
         company: {
           id: comp.id,
           name: comp.company_name,
           code: comp.company_code,
+          status: comp.status || 'Aktif',
           phone: comp.phone || '0812-4567-8901',
-          email: comp.email || 'superadmin@invoiceonline101.id',
-          address: comp.address || 'Pusat Kontrol Superadmin Invoice Online 101',
+          email: 'superadmintri@invoiceonline101.id',
+          address: 'Pusat Kontrol Super Admin',
           bankInfo: {
             bankName: comp.bank_name || 'BCA',
             accountNumber: comp.account_number || '7890123456',
             accountHolder: comp.company_name
           },
-          signatureName: 'Super Administrator',
-          signatureTitle: 'Root System Controller',
+          signatureName: 'Super Admin Tri',
+          signatureTitle: 'Super Administrator',
           logoUrl: comp.logo_url || '/logo.jpg',
           signatureUrl: comp.signature_url || '',
           stampUrl: comp.stamp_url || ''
@@ -617,15 +608,11 @@ export const supabaseService = {
       };
     }
 
-    throw new Error('Kredensial Superadmin tidak valid! Pastikan Username dan Password khusus Superadmin sesuai.');
-  },
-
-  async loginSuperAdmin(usernameInput, passwordInput, pinInput) {
-    return this.loginSuperadmin(usernameInput, passwordInput, pinInput);
+    throw new Error('Kredensial Superadmin tidak valid! Username atau Password salah.');
   },
 
   // ==========================================
-  // COMPANY CRUD (SUPER ADMIN MULTI-TENANT)
+  // COMPANIES CRUD & ACTIVATION (SUPERADMIN ONLY)
   // ==========================================
   async fetchCompanies() {
     try {
@@ -633,133 +620,79 @@ export const supabaseService = {
         .from('companies')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (error) {
-        console.warn('fetchCompanies warning:', error.message);
-        throw error;
-      }
+      if (error) throw error;
       return data || [];
     } catch (e) {
-      try {
-        if (typeof localStorage !== 'undefined') {
-          const cached = localStorage.getItem('io101_companies_cache');
-          if (cached) return JSON.parse(cached);
-        }
-      } catch (err) {}
+      console.warn('fetchCompanies error:', e.message);
       return [];
     }
   },
 
-  async createCompany(companyData) {
-    const acronym = companyData.company_code 
-      ? companyData.company_code.toUpperCase().trim() 
-      : (companyData.company_name ? companyData.company_name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() : 'IO101');
-
-    const newCompany = {
-      company_name: companyData.company_name.trim(),
-      company_code: acronym,
-      phone: companyData.phone || '',
-      email: companyData.email || '',
-      address: companyData.address || '',
-      bank_name: companyData.bank_name || 'BCA',
-      account_number: companyData.account_number || '',
-      account_holder: companyData.account_holder || companyData.company_name,
-      signature_name: companyData.signature_name || '',
-      signature_title: companyData.signature_title || 'Owner / Direktur',
-      logo_url: companyData.logo_url || '/logo.jpg',
-      signature_url: companyData.signature_url || '',
-      stamp_url: companyData.stamp_url || '',
+  async createCompany(compData) {
+    const payload = {
+      company_name: compData.companyName,
+      company_code: (compData.companyCode || '').toUpperCase().trim(),
+      status: compData.status || 'Aktif',
+      phone: compData.phone || '',
+      email: compData.email || '',
+      address: compData.address || '',
+      bank_name: compData.bankName || 'BCA',
+      account_number: compData.accountNumber || '',
+      account_holder: compData.accountHolder || compData.companyName,
+      signature_name: compData.signatureName || compData.companyName,
+      signature_title: compData.signatureTitle || 'Direktur / Owner',
+      logo_url: compData.logoUrl || '/logo.jpg',
+      signature_url: compData.signatureUrl || '',
+      stamp_url: compData.stampUrl || '',
       created_at: new Date().toISOString()
     };
-
-    if (companyData.id && typeof companyData.id === 'string' && companyData.id.length === 36) {
-      newCompany.id = companyData.id;
-    }
-
-    try {
-      const { data, error } = await supabase.from('companies').insert(newCompany).select();
-      if (error) throw error;
-      const savedCompany = (data && data[0]) ? data[0] : newCompany;
-
-      // Buat akun Admin awal untuk perusahaan ini jika ditentukan
-      if (companyData.adminUsername && companyData.adminPassword) {
-        try {
-          await supabase.from('company_users').insert({
-            company_id: savedCompany.id,
-            company_name: savedCompany.company_name,
-            company_code: savedCompany.company_code,
-            name: companyData.adminName || 'Admin ' + savedCompany.company_name,
-            username: companyData.adminUsername.toLowerCase().trim(),
-            password: companyData.adminPassword.trim(),
-            role: 'Admin / Owner',
-            email: companyData.adminEmail || savedCompany.email || '',
-            status: 'Aktif',
-            auth_provider: 'password',
-            created_at: new Date().toISOString()
-          });
-        } catch (uErr) {
-          console.warn('Auto create company admin warning:', uErr.message);
-        }
-      }
-
-      return savedCompany;
-    } catch (e) {
-      console.warn('createCompany Supabase insert warning:', e.message);
-      // Fallback object
-      return {
-        ...newCompany,
-        id: newCompany.id || 'comp-' + Date.now()
-      };
-    }
+    const { data, error } = await supabase.from('companies').insert(payload).select();
+    if (error) throw error;
+    return data && data[0];
   },
 
-  async updateCompany(id, updates) {
+  async updateCompany(id, compData) {
     const payload = {
-      company_name: updates.company_name,
-      company_code: updates.company_code ? updates.company_code.toUpperCase().trim() : undefined,
-      phone: updates.phone,
-      email: updates.email,
-      address: updates.address,
-      bank_name: updates.bank_name,
-      account_number: updates.account_number,
-      account_holder: updates.account_holder,
-      signature_name: updates.signature_name,
-      signature_title: updates.signature_title,
-      logo_url: updates.logo_url,
-      signature_url: updates.signature_url,
-      stamp_url: updates.stamp_url
+      company_name: compData.companyName,
+      company_code: (compData.companyCode || '').toUpperCase().trim(),
+      status: compData.status || 'Aktif',
+      phone: compData.phone,
+      email: compData.email,
+      address: compData.address,
+      bank_name: compData.bankName,
+      account_number: compData.accountNumber,
+      account_holder: compData.accountHolder,
+      signature_name: compData.signatureName,
+      signature_title: compData.signatureTitle,
+      logo_url: compData.logoUrl,
+      signature_url: compData.signatureUrl,
+      stamp_url: compData.stampUrl
     };
+    const { data, error } = await supabase.from('companies').update(payload).eq('id', id).select();
+    if (error) throw error;
+    return data && data[0];
+  },
 
-    // Remove undefined keys
-    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
-
-    try {
-      const { data, error } = await supabase.from('companies').update(payload).eq('id', id).select();
-      if (error) throw error;
-      return (data && data[0]) ? data[0] : { id, ...payload };
-    } catch (e) {
-      console.warn('updateCompany Supabase warning:', e.message);
-      return { id, ...payload };
-    }
+  async toggleCompanyStatus(id, newStatus) {
+    const { data, error } = await supabase
+      .from('companies')
+      .update({ status: newStatus })
+      .eq('id', id)
+      .select();
+    if (error) throw error;
+    return data && data[0];
   },
 
   async deleteCompany(id) {
+    // Hapus relasi di company_users terlebih dahulu
     try {
-      // 1. Bersihkan user perusahaan terkait
-      try {
-        await supabase.from('company_users').delete().eq('company_id', id);
-      } catch (uErr) {
-        console.warn('Delete company users warning:', uErr.message);
-      }
-
-      // 2. Hapus perusahaan
-      const { error } = await supabase.from('companies').delete().eq('id', id);
-      if (error) throw error;
-      return true;
+      await supabase.from('company_users').delete().eq('company_id', id);
     } catch (e) {
-      console.warn('deleteCompany Supabase warning:', e.message);
-      return false;
+      console.warn('Delete company users notice:', e.message);
     }
+    const { error } = await supabase.from('companies').delete().eq('id', id);
+    if (error) throw error;
+    return true;
   },
 
   // Company Profile Update in Supabase
@@ -797,11 +730,13 @@ export const supabaseService = {
     }
   },
 
-  // User Management CRUD
+  // ==========================================
+  // USER MANAGEMENT CRUD (SUPERADMIN ONLY)
+  // ==========================================
   async fetchUsers(companyCode) {
     try {
       let query = supabase.from('company_users').select('*').order('created_at', { ascending: false });
-      if (companyCode) {
+      if (companyCode && companyCode !== 'ALL') {
         query = query.eq('company_code', companyCode);
       }
       const { data, error } = await query;
@@ -815,7 +750,8 @@ export const supabaseService = {
 
   async addUser(userData) {
     const { data, error } = await supabase.from('company_users').insert({
-      company_name: userData.company,
+      company_id: userData.companyId || undefined,
+      company_name: userData.company || userData.companyName,
       company_code: userData.companyCode,
       name: userData.name,
       username: (userData.username || '').toLowerCase().trim(),

@@ -17,9 +17,8 @@ import {
 
 export default function SuperAdminLogin({ onBack }) {
   const { loginSuperadmin } = useAuth();
-  const [username, setUsername] = useState('superadmin');
+  const [username, setUsername] = useState('superadmintri');
   const [password, setPassword] = useState('');
-  const [securityPin, setSecurityPin] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,20 +28,20 @@ export default function SuperAdminLogin({ onBack }) {
     setError('');
 
     if (!username.trim()) {
-      setError('Username atau Email Superadmin wajib diisi.');
+      setError('Username Super Admin wajib diisi.');
       return;
     }
     if (!password.trim()) {
-      setError('Password Superadmin wajib diisi.');
+      setError('Password Super Admin wajib diisi.');
       return;
     }
 
     setLoading(true);
     try {
-      await loginSuperadmin(username.trim(), password.trim(), securityPin.trim());
+      await loginSuperadmin(username.trim(), password.trim());
     } catch (err) {
       console.error('Superadmin login error:', err);
-      let errMsg = err.message || 'Gagal masuk sebagai Superadmin.';
+      let errMsg = err.message || 'Gagal masuk sebagai Super Admin.';
       if (errMsg.toLowerCase().includes('supabase') || errMsg.toLowerCase().includes('secret')) {
         errMsg = 'Koneksi ke database gagal. Pastikan jaringan internet stabil.';
       }
@@ -138,28 +137,6 @@ export default function SuperAdminLogin({ onBack }) {
             </div>
           </div>
 
-          {/* 3. Security PIN / Master Key (Opsional) */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                3. Security PIN / Master Key
-              </label>
-              <span className="text-[10px] text-amber-400/70 font-medium">Opsional (Default: 101101)</span>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-amber-400/80">
-                <KeyRound className="w-4 h-4" />
-              </div>
-              <input
-                type="password"
-                maxLength={12}
-                value={securityPin}
-                onChange={(e) => setSecurityPin(e.target.value)}
-                placeholder="6-digit PIN keamanan (opsional)"
-                className="w-full pl-10 pr-3.5 py-2.5 text-sm bg-slate-950/70 border border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-white placeholder:text-slate-500 font-mono transition"
-              />
-            </div>
-          </div>
 
           {/* Action Submit */}
           <button
@@ -185,21 +162,27 @@ export default function SuperAdminLogin({ onBack }) {
         <div className="mt-6 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400">
           <div className="flex items-center justify-between text-[11px] text-amber-400 font-semibold mb-1">
             <span className="flex items-center gap-1">
-              <Server className="w-3.5 h-3.5" /> Akun Superadmin Terverifikasi:
+              <Server className="w-3.5 h-3.5" /> Akun Super Admin Resmi:
             </span>
-            <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px]">Cloud Synced</span>
+            <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px]">Cloud Active</span>
           </div>
           <div className="font-mono text-[11px] text-slate-300 space-y-0.5">
-            <div>User: <span className="text-white font-bold">superadmin</span></div>
-            <div>Password: <span className="text-white font-bold">superadmin101</span></div>
+            <div>User: <span className="text-white font-bold">superadmintri</span></div>
+            <div>Password: <span className="text-white font-bold">12shutera</span></div>
           </div>
         </div>
 
-        {/* Back Button */}
+        {/* Back Button / Link */}
         <div className="mt-5 pt-4 border-t border-slate-800 text-center">
           <button
             type="button"
-            onClick={onBack}
+            onClick={() => {
+              if (onBack) {
+                onBack();
+              } else {
+                window.location.href = './index.html';
+              }
+            }}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-amber-400 transition"
           >
             <ArrowLeft className="w-3.5 h-3.5" />

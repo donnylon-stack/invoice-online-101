@@ -568,18 +568,26 @@ export default function CompanySettings() {
               Manajemen Pengguna (CRUD User)
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Kelola akun pengguna yang berwenang login dan mengakses tagihan perusahaan <strong>{session?.companyName}</strong>.
+              Daftar akun pengguna yang berwenang login dan mengakses tagihan perusahaan <strong>{session?.companyName}</strong>.
             </p>
+            {!session?.isSuperadmin && (
+              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200/60 rounded-lg px-2.5 py-1.5 mt-2 flex items-center gap-1.5 font-medium">
+                <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Penambahan, perubahan, dan penghapusan pengguna diatur secara terpusat oleh Super Administrator.</span>
+              </p>
+            )}
           </div>
 
-          <button
-            type="button"
-            onClick={handleOpenAddUser}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-sm transition self-start sm:self-auto shrink-0"
-          >
-            <UserPlus className="w-4 h-4" />
-            Tambah User Baru
-          </button>
+          {session?.isSuperadmin && (
+            <button
+              type="button"
+              onClick={handleOpenAddUser}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-sm transition self-start sm:self-auto shrink-0"
+            >
+              <UserPlus className="w-4 h-4" />
+              Tambah User Baru
+            </button>
+          )}
         </div>
 
         {/* Users Table */}
@@ -660,25 +668,31 @@ export default function CompanySettings() {
 
                       {/* Action */}
                       <td className="py-3.5 px-4 text-center">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditUser(u)}
-                            title="Edit User"
-                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isCurrent}
-                            onClick={() => handleDeleteUser(u)}
-                            title={isCurrent ? 'Tidak bisa menghapus akun Anda sendiri yang sedang aktif' : 'Hapus User'}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        {session?.isSuperadmin ? (
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditUser(u)}
+                              title="Edit User"
+                              className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isCurrent}
+                              onClick={() => handleDeleteUser(u)}
+                              title={isCurrent ? 'Tidak bisa menghapus akun Anda sendiri yang sedang aktif' : 'Hapus User'}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-medium inline-flex items-center gap-1">
+                            <Lock className="w-3 h-3 text-slate-400" /> Terkunci
+                          </span>
+                        )}
                       </td>
 
                     </tr>

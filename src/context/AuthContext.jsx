@@ -6,27 +6,6 @@ const AuthContext = createContext();
 
 const SESSION_KEY = 'io101_auth_session';
 const USERS_DB_KEY = 'io101_users_database';
-const COMPANIES_DB_KEY = 'io101_companies_database';
-
-const DEFAULT_SEED_COMPANIES = [
-  {
-    id: 'c101-homycare-default',
-    company_name: 'Homy Care Manado',
-    company_code: 'HCM',
-    phone: '0812-4567-8901',
-    email: 'homycaremanado@gmail.com',
-    address: 'Jl. Sam Ratulangi No. 101, Manado, Sulawesi Utara',
-    bank_name: 'BCA',
-    account_number: '7890123456',
-    account_holder: 'Homy Care Manado',
-    signature_name: 'Tri HomyCare',
-    signature_title: 'Direktur Utama',
-    logo_url: '/logo.jpg',
-    signature_url: '',
-    stamp_url: '',
-    created_at: new Date().toISOString()
-  }
-];
 
 export function AuthProvider({ children }) {
   // Load users from storage or initialize empty
@@ -40,20 +19,6 @@ export function AuthProvider({ children }) {
     return [];
   });
 
-  // Load companies from storage or initialize with defaults
-  const [companies, setCompanies] = useState(() => {
-    try {
-      const saved = localStorage.getItem(COMPANIES_DB_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {
-      console.error('Failed to load companies DB', e);
-    }
-    return DEFAULT_SEED_COMPANIES;
-  });
-
   // Current logged in session
   const [session, setSession] = useState(() => {
     try {
@@ -65,10 +30,17 @@ export function AuthProvider({ children }) {
     return null;
   });
 
+  // Companies state for Superadmin
+  const [companies, setCompanies] = useState([]);
+
   // Save session changes
   useEffect(() => {
     if (session) {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      if (session.isSuperadmin) {
+        supabaseService.fetchCompanies().then(setCompanies).catch(() => {});
+        supabaseService.fetchUsers('ALL').then(setAllUsers).catch(() => {});
+      }
     } else {
       localStorage.removeItem(SESSION_KEY);
     }
@@ -79,37 +51,15 @@ export function AuthProvider({ children }) {
     localStorage.setItem(USERS_DB_KEY, JSON.stringify(allUsers));
   }, [allUsers]);
 
-  // Save companies database
-  useEffect(() => {
-    localStorage.setItem(COMPANIES_DB_KEY, JSON.stringify(companies));
-  }, [companies]);
-
   // Normalizer helper: removes spaces and converts to lowercase
   const normalizeCompany = (name) => {
     if (!name) return '';
     return name.trim().toLowerCase().replace(/\s+/g, '');
   };
 
-  // Sync companies from Supabase
-  const fetchCompaniesList = async () => {
-    try {
-      const dbCompanies = await supabaseService.fetchCompanies();
-      if (Array.isArray(dbCompanies) && dbCompanies.length > 0) {
-        setCompanies(dbCompanies);
-        localStorage.setItem(COMPANIES_DB_KEY, JSON.stringify(dbCompanies));
-      }
-    } catch (err) {
-      console.warn('Sync companies warning:', err.message);
-    }
-  };
-
-  useEffect(() => {
-    fetchCompaniesList();
-  }, []);
-
   // Fetch users from Supabase when logged in
   useEffect(() => {
-    if (session?.companyCode && session?.companyCode !== 'HQ') {
+    if (session?.companyCode) {
       supabaseService.fetchUsers(session.companyCode)
         .then(users => {
           if (Array.isArray(users) && users.length > 0) {
@@ -167,8 +117,6 @@ export function AuthProvider({ children }) {
 
     const { user, company } = await supabaseService.loginUser(companyInput, userInput, passwordInput);
 
-    const isSA = (user.role || '').toLowerCase().includes('super admin') || user.isSuperAdmin === true;
-
     const userSession = {
       userId: user.id,
       companyId: company.id,
@@ -178,8 +126,6 @@ export function AuthProvider({ children }) {
       userName: user.name,
       username: user.username,
       role: user.role,
-      isSuperAdmin: isSA,
-      isSwitched: false,
       email: user.email,
       provider: user.provider || 'password',
       phone: company.phone || '0812-4567-8901',
@@ -199,92 +145,6 @@ export function AuthProvider({ children }) {
 
     setSession(userSession);
     return userSession;
-  };
-
-  /**
-   * Login as Super Admin (Multi-Tenant Master Portal)
-   */
-  const loginSuperAdmin = async (userInput, passwordInput) => {
-    if (!userInput?.trim() || !passwordInput?.trim()) {
-      throw new Error('Username dan Password Super Admin wajib diisi!');
-    }
-
-    const { user } = await supabaseService.loginSuperAdmin(userInput, passwordInput);
-
-    const superAdminSession = {
-      userId: user.id,
-      companyId: null,
-      companyMatch: 'superadmin',
-      companyName: 'Super Admin HQ',
-      companyCode: 'HQ',
-      userName: user.name,
-      username: user.username,
-      role: 'Super Admin',
-      isSuperAdmin: true,
-      isSwitched: false,
-      email: user.email,
-      provider: 'superadmin',
-      phone: '0812-4567-8901',
-      address: 'Pusat Kontrol Sistem Multi-Perusahaan',
-      logoUrl: '/logo.jpg',
-      signatureUrl: '',
-      stampUrl: '',
-      bankInfo: {
-        bankName: 'BCA',
-        accountNumber: '-',
-        accountHolder: 'Pusat Kontrol Multi-Perusahaan'
-      },
-      signatureName: user.name,
-      signatureTitle: 'Super Administrator',
-      loggedInAt: new Date().toISOString()
-    };
-
-    setSession(superAdminSession);
-    return superAdminSession;
-  };
-
-  /**
-   * Switch Context to Impersonate / Manage a Company (Super Admin Feature)
-   */
-  const switchCompany = (targetCompany) => {
-    if (!session?.isSuperAdmin) return;
-    setSession(prev => ({
-      ...prev,
-      companyId: targetCompany.id,
-      companyMatch: normalizeCompany(targetCompany.company_name || targetCompany.name),
-      companyName: targetCompany.company_name || targetCompany.name,
-      companyCode: targetCompany.company_code || targetCompany.code,
-      phone: targetCompany.phone || '0812-4567-8901',
-      email: targetCompany.email || prev.email,
-      address: targetCompany.address || 'Manado, Sulawesi Utara',
-      logoUrl: targetCompany.logo_url || targetCompany.logoUrl || '/logo.jpg',
-      signatureUrl: targetCompany.signature_url || targetCompany.signatureUrl || '',
-      stampUrl: targetCompany.stamp_url || targetCompany.stampUrl || '',
-      bankInfo: {
-        bankName: targetCompany.bank_name || targetCompany.bankInfo?.bankName || 'BCA',
-        accountNumber: targetCompany.account_number || targetCompany.bankInfo?.accountNumber || '',
-        accountHolder: targetCompany.account_holder || targetCompany.bankInfo?.accountHolder || (targetCompany.company_name || targetCompany.name)
-      },
-      signatureName: targetCompany.signature_name || targetCompany.signatureName || prev.userName,
-      signatureTitle: targetCompany.signature_title || targetCompany.signatureTitle || 'Direktur',
-      isSuperAdmin: true,
-      isSwitched: true
-    }));
-  };
-
-  /**
-   * Exit Company Switch and return to Super Admin HQ
-   */
-  const exitCompanySwitch = () => {
-    if (!session?.isSuperAdmin) return;
-    setSession(prev => ({
-      ...prev,
-      companyId: null,
-      companyMatch: 'superadmin',
-      companyName: 'Super Admin HQ',
-      companyCode: 'HQ',
-      isSwitched: false
-    }));
   };
 
   /**
@@ -437,94 +297,92 @@ export function AuthProvider({ children }) {
     setAllUsers(prev => prev.filter(u => u.id !== id));
   };
 
-  // --- CRUD COMPANY MANAGEMENT (SUPER ADMIN) ---
-  const createCompany = async (companyData) => {
-    const saved = await supabaseService.createCompany(companyData);
-    if (saved) {
-      setCompanies(prev => {
-        const next = [saved, ...prev.filter(c => c.id !== saved.id)];
-        localStorage.setItem(COMPANIES_DB_KEY, JSON.stringify(next));
-        return next;
-      });
-    }
-    return saved;
+  // --- CRUD COMPANIES & STATUS (SUPERADMIN ONLY) ---
+  const fetchCompanies = async () => {
+    const list = await supabaseService.fetchCompanies();
+    setCompanies(list);
+    return list;
   };
 
-  const updateCompany = async (id, updatedFields) => {
-    const updated = await supabaseService.updateCompany(id, updatedFields);
-    if (updated) {
-      setCompanies(prev => {
-        const next = prev.map(c => (c.id === id ? { ...c, ...updated } : c));
-        localStorage.setItem(COMPANIES_DB_KEY, JSON.stringify(next));
-        return next;
-      });
+  const createCompany = async (compData) => {
+    const created = await supabaseService.createCompany(compData);
+    if (created) {
+      setCompanies(prev => [created, ...prev]);
+    }
+    return created;
+  };
 
-      // Jika Super Admin sedang aktif mengelola perusahaan ini, perbarui sesi aktif juga
-      if (session && session.companyId === id) {
-        setSession(prev => ({
-          ...prev,
-          companyName: updated.company_name || prev.companyName,
-          companyCode: updated.company_code || prev.companyCode,
-          phone: updated.phone !== undefined ? updated.phone : prev.phone,
-          email: updated.email !== undefined ? updated.email : prev.email,
-          address: updated.address !== undefined ? updated.address : prev.address,
-          logoUrl: updated.logo_url !== undefined ? updated.logo_url : prev.logoUrl,
-          bankInfo: {
-            bankName: updated.bank_name || prev.bankInfo?.bankName,
-            accountNumber: updated.account_number || prev.bankInfo?.accountNumber,
-            accountHolder: updated.account_holder || prev.bankInfo?.accountHolder
-          },
-          signatureName: updated.signature_name || prev.signatureName,
-          signatureTitle: updated.signature_title || prev.signatureTitle
-        }));
-      }
+  const updateCompany = async (id, compData) => {
+    const updated = await supabaseService.updateCompany(id, compData);
+    if (updated) {
+      setCompanies(prev => prev.map(c => c.id === id ? updated : c));
+    }
+    return updated;
+  };
+
+  const toggleCompanyStatus = async (id, newStatus) => {
+    const updated = await supabaseService.toggleCompanyStatus(id, newStatus);
+    if (updated) {
+      setCompanies(prev => prev.map(c => c.id === id ? updated : c));
     }
     return updated;
   };
 
   const deleteCompany = async (id) => {
-    if (session && session.companyId === id && !session.isSwitched) {
-      throw new Error('Anda tidak dapat menghapus perusahaan yang sedang aktif!');
-    }
-
     await supabaseService.deleteCompany(id);
-    setCompanies(prev => {
-      const next = prev.filter(c => c.id !== id);
-      localStorage.setItem(COMPANIES_DB_KEY, JSON.stringify(next));
-      return next;
-    });
+    setCompanies(prev => prev.filter(c => c.id !== id));
+  };
 
-    if (session && session.companyId === id && session.isSwitched) {
-      exitCompanySwitch();
-    }
-    return true;
+  const switchCompany = (comp) => {
+    if (!comp) return;
+    setSession(prev => ({
+      ...prev,
+      companyId: comp.id,
+      companyName: comp.company_name || comp.name,
+      companyCode: comp.company_code || comp.code,
+      phone: comp.phone || prev?.phone,
+      email: comp.email || prev?.email,
+      address: comp.address || prev?.address,
+      bankInfo: {
+        bankName: comp.bank_name || 'BCA',
+        accountNumber: comp.account_number || '',
+        accountHolder: comp.account_holder || comp.company_name
+      },
+      logoUrl: comp.logo_url || prev?.logoUrl
+    }));
+  };
+
+  const fetchAllUsers = async () => {
+    const users = await supabaseService.fetchUsers('ALL');
+    setAllUsers(users);
+    return users;
   };
 
   return (
     <AuthContext.Provider value={{
       session,
       isAuthenticated: !!session,
-      isSuperadmin: session?.role === 'Superadmin' || session?.isSuperadmin === true || Boolean(session?.isSuperAdmin),
-      isSuperAdmin: session?.role === 'Superadmin' || session?.isSuperadmin === true || Boolean(session?.isSuperAdmin),
+      isSuperadmin: session?.role === 'Superadmin' || session?.isSuperadmin === true,
       login,
-      loginSuperAdmin,
       loginWithGoogle,
       loginSuperadmin,
       logout,
       updateProfile,
-      switchCompany,
-      exitCompanySwitch,
-      // Company Management (Super Admin)
-      companies,
-      fetchCompaniesList,
-      createCompany,
-      updateCompany,
-      deleteCompany,
       // User Management
+      allUsers,
+      fetchAllUsers,
       companyUsers,
       addUser,
       updateUser,
-      deleteUser
+      deleteUser,
+      // Company Management (Superadmin Only)
+      companies,
+      fetchCompanies,
+      createCompany,
+      updateCompany,
+      toggleCompanyStatus,
+      deleteCompany,
+      switchCompany
     }}>
       {children}
     </AuthContext.Provider>

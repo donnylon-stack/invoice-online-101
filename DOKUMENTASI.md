@@ -398,12 +398,24 @@ ON CONFLICT DO NOTHING;
     - **Penghapusan Data Dummy Lokal:** Menghilangkan seluruh injeksi data sampel buatan di `InvoiceContext.jsx` agar aplikasi murni merefleksikan data riil yang ada di server cloud Supabase.
     - **Proteksi Operasi CRUD:** Pembuatan faktur invoice, penawaran, klien, dan katalog produk diwajibkan melewati validasi koneksi server aktif sebelum data dapat diproses.
     - **Pemantauan Detak Jantung Koneksi (Heartbeat):** Menambahkan event listener `online`/`offline` serta interval pemantauan berkala (15 detik) untuk sinkronisasi otomatis ketika koneksi pulih.
-  - **Implementasi Halaman Login Khusus Superadmin (Restricted Root Access Portal):**
-    - **Komponen Baru:** [`src/components/SuperAdminLogin.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/SuperAdminLogin.jsx)
-    - **Desain & Antarmuka:** Tampilan bertema *Dark Luxury Glassmorphism* (`slate-950` / `amber-500` / `indigo-950`) dengan lencana eksklusif *Restricted Portal • Root Access*, form input Username/Email Superadmin, Password, serta *Security PIN / Master Access Key* (6 digit PIN).
-    - **Akses & Navigasi Terpadu:** Dapat diakses secara instan dari halaman login utama ([`src/components/AuthView.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/AuthView.jsx)) melalui tombol shortcut mengambang di pojok kanan atas, tombol *"Portal Superadmin"* di dalam kartu formulir, maupun via parameter URL langsung (`?portal=superadmin` atau `?mode=superadmin`).
-    - **Layanan Autentikasi Cloud & Master Fallback:** Ditambahkan metode `loginSuperadmin` pada [`src/lib/supabaseService.js`](file:///D:/Web%20Project/invoice-online-101/src/lib/supabaseService.js) dan [`src/context/AuthContext.jsx`](file:///D:/Web%20Project/invoice-online-101/src/context/AuthContext.jsx). Memverifikasi pengguna dengan role `Superadmin` di tabel `company_users` Supabase Cloud serta mendukung fallback master credential.
-    - **Indikator Identitas di Navbar:** Menambahkan lencana emas `👑 Superadmin` pada profil pengguna di [`src/components/Navbar.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/Navbar.jsx) saat sesi superadmin aktif.
+  - **Implementasi Halaman Login Khusus Superadmin Terpisah & Konsol Root:**
+    - **Halaman Standalone:** Disediakan file entri mandiri [`superadmin.html`](file:///D:/Web%20Project/invoice-online-101/superadmin.html) dan script root [`src/superadmin.jsx`](file:///D:/Web%20Project/invoice-online-101/src/superadmin.jsx) yang terdaftar pada build multi-page Vite (`vite.config.js`).
+    - **Kredensial Resmi Superadmin:**
+      - **Username:** `superadmintri`
+      - **Password:** `12shutera`
+      - **Tabel Cloud:** Tersimpan pada tabel `company_users` Supabase dengan `role: 'Superadmin'`.
+    - **Lingkup Eksklusif Superadmin (SuperAdminConsole.jsx):**
+      - Super Administrator **hanya** memiliki akses ke manajemen multi-tenant:
+        1. **CRUD Perusahaan:** Tambah perusahaan baru, edit data profil & rekening bank perusahaan, hapus perusahaan.
+        2. **Kontrol Aktivasi (Activate / Deactivate):** Tombol toggle status perusahaan (`Aktif` vs `Nonaktif`).
+        3. **CRUD User Perusahaan:** Tambah akun user baru di bawah perusahaan tertentu, ubah nama/password/role/status user, dan hapus user.
+      - Superadmin tidak disajikan modul invoice, penawaran harga, klien, atau katalog barang untuk menjaga kemurnian tugas administrasi root.
+    - **Pemblokiran Login Saat Perusahaan Dinonaktifkan (Deactivated):**
+      - Pada `supabaseService.loginUser` dan `supabaseService.loginGoogleUser`, status perusahaan divalidasi terlebih dahulu sebelum pengecekan akun/password.
+      - Jika status perusahaan adalah `Nonaktif`, seluruh pengguna yang berafiliasi dengan perusahaan tersebut secara otomatis **DITOLAK LOGIN** dengan pesan peringatan: *"Perusahaan [Nama] saat ini dinonaktifkan (Deactivated) oleh Super Administrator. Semua pengguna pada perusahaan ini tidak dapat login."*
+    - **Pembatasan Hak Akses pada Aplikasi Pengguna Reguler:**
+      - Pada [`src/components/CompanySettings.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/CompanySettings.jsx), tombol tambah user baru serta tombol edit dan hapus user disembunyikan untuk pengguna reguler (`!session?.isSuperadmin`). Diberikan banner informasi bahwa akun pengguna dikelola secara terpusat oleh Super Administrator.
+      - Pada [`src/components/AuthView.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/AuthView.jsx), tombol login root di dalam kartu formulir dihilangkan agar form login pengguna tetap bersih, dan disediakan tautan terpisah menuju `superadmin.html`.
 
 
 
