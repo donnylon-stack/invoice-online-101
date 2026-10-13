@@ -512,7 +512,7 @@ export const supabaseService = {
         });
 
         if (foundUser) {
-          if (foundUser.password !== cleanPassword && !isExactSuperadminTri) {
+          if (foundUser.password !== cleanPassword) {
             throw new Error('Password Superadmin salah! Silakan periksa kembali.');
           }
           if (foundUser.status && foundUser.status !== 'Aktif') {
@@ -563,7 +563,7 @@ export const supabaseService = {
       console.warn('Superadmin query error:', e.message);
     }
 
-    // 2. Fallback Kredensial Resmi: superadmintri / 12shutera
+    // 2. Fallback Kredensial Resmi jika database belum berisi akun superadmin
     if (isExactSuperadminTri) {
       let comp = {
         id: '2f0a0fcc-3f65-482c-8e35-7271ecefa53d',
@@ -609,6 +609,61 @@ export const supabaseService = {
     }
 
     throw new Error('Kredensial Superadmin tidak valid! Username atau Password salah.');
+  },
+
+  async changeSuperadminPassword(username, oldPassword, newPassword) {
+    const normUser = (username || 'superadmintri').trim().toLowerCase();
+    const cleanOld = (oldPassword || '').trim();
+    const cleanNew = (newPassword || '').trim();
+
+    if (!cleanNew) {
+      throw new Error('Password baru wajib diisi!');
+    }
+    if (cleanNew.length < 4) {
+      throw new Error('Password baru minimal 4 karakter!');
+    }
+
+    // 1. Ambil data user dari company_users
+    const { data: users, error: fetchErr } = await supabase
+      .from('company_users')
+      .select('*')
+      .ilike('username', normUser);
+
+    if (fetchErr) {
+      throw new Error('Gagal mengakses database cloud: ' + fetchErr.message);
+    }
+
+    const targetUser = (users || []).find(u => {
+      const uName = (u.username || '').toLowerCase();
+      const uEmail = (u.email || '').toLowerCase();
+      const isSuper = (u.role || '').toLowerCase().includes('superadmin') || uName === 'superadmintri';
+      return (uName === normUser || uEmail === normUser) && isSuper;
+    }) || (users && users[0]);
+
+    if (!targetUser) {
+      throw new Error(`Akun Super Admin "${normUser}" tidak ditemukan di database.`);
+    }
+
+    // 2. Validasi password lama jika diinput
+    if (cleanOld && targetUser.password && targetUser.password !== cleanOld) {
+      throw new Error('Password lama yang Anda masukkan tidak sesuai!');
+    }
+
+    // 3. Update password di Supabase
+    const { data: updated, error: updErr } = await supabase
+      .from('company_users')
+      .update({
+        password: cleanNew,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', targetUser.id)
+      .select();
+
+    if (updErr) {
+      throw new Error('Gagal memperbarui password di server cloud: ' + updErr.message);
+    }
+
+    return updated && updated[0];
   },
 
   // ==========================================

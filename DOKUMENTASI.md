@@ -416,13 +416,10 @@ ON CONFLICT DO NOTHING;
     - **Pembatasan Hak Akses pada Aplikasi Pengguna Reguler:**
       - Pada [`src/components/CompanySettings.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/CompanySettings.jsx), tombol tambah user baru serta tombol edit dan hapus user disembunyikan untuk pengguna reguler (`!session?.isSuperadmin`). Diberikan banner informasi bahwa akun pengguna dikelola secara terpusat oleh Super Administrator.
       - Pada [`src/components/AuthView.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/AuthView.jsx), tombol login root di dalam kartu formulir dihilangkan agar form login pengguna tetap bersih, dan disediakan tautan terpisah menuju `superadmin.html`.
-
-
-
-
-
-
-
-
-
-
+  - **Pembersihan Kredensial Login & Penambahan Fitur Ganti Password Super Admin:**
+    - **Pembersihan Halaman Login:** Menghapus seluruh kotak informasi teks kredensial akun (*username* & *password*) dari halaman login [`src/components/SuperAdminLogin.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/SuperAdminLogin.jsx), serta mengosongkan nilai awal input form agar login aman dan tidak mengekspos kata sandi secara publik.
+    - **Fitur Ganti Password Super Admin:**
+      - Menambahkan tombol **"Ganti Password"** dengan ikon `KeyRound` di bagian atas konsol [`src/components/SuperAdminConsole.jsx`](file:///D:/Web%20Project/invoice-online-101/src/components/SuperAdminConsole.jsx).
+      - Menyediakan dialog modal interaktif untuk mengubah kata sandi akun Super Admin (input Password Lama, Password Baru min. 4 karakter, dan Konfirmasi Password).
+      - Terintegrasi langsung dengan database Supabase Cloud melalui fungsi `changeSuperadminPassword` pada [`src/lib/supabaseService.js`](file:///D:/Web%20Project/invoice-online-101/src/lib/supabaseService.js) dan [`src/context/AuthContext.jsx`](file:///D:/Web%20Project/invoice-online-101/src/context/AuthContext.jsx), yang memperbarui kolom `password` pada tabel `company_users`.
+      - Validasi ketat diterapkan sehingga setelah kata sandi diubah, sistem langsung menerapkan kata sandi baru untuk login berikutnya.

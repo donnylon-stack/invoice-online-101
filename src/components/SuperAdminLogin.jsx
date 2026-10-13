@@ -17,7 +17,7 @@ import {
 
 export default function SuperAdminLogin({ onBack }) {
   const { loginSuperadmin } = useAuth();
-  const [username, setUsername] = useState('superadmintri');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -103,7 +103,7 @@ export default function SuperAdminLogin({ onBack }) {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Contoh: superadmin"
+                placeholder="Masukkan username superadmin"
                 className="w-full pl-10 pr-3.5 py-2.5 text-sm bg-slate-950/70 border border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-white placeholder:text-slate-500 font-medium transition"
                 required
               />
@@ -157,20 +157,6 @@ export default function SuperAdminLogin({ onBack }) {
             )}
           </button>
         </form>
-
-        {/* Info Card: Kredensial Superadmin */}
-        <div className="mt-6 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400">
-          <div className="flex items-center justify-between text-[11px] text-amber-400 font-semibold mb-1">
-            <span className="flex items-center gap-1">
-              <Server className="w-3.5 h-3.5" /> Akun Super Admin Resmi:
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px]">Cloud Active</span>
-          </div>
-          <div className="font-mono text-[11px] text-slate-300 space-y-0.5">
-            <div>User: <span className="text-white font-bold">superadmintri</span></div>
-            <div>Password: <span className="text-white font-bold">12shutera</span></div>
-          </div>
-        </div>
 
         {/* Back Button / Link */}
         <div className="mt-5 pt-4 border-t border-slate-800 text-center">

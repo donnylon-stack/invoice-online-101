@@ -41,7 +41,8 @@ export default function SuperAdminConsole() {
     fetchAllUsers,
     addUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    changeSuperadminPassword
   } = useAuth();
 
   const { syncWithCloud } = useInvoice();
@@ -51,6 +52,16 @@ export default function SuperAdminConsole() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Modal Ganti Password Super Admin States
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPass, setShowOldPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   // Modal Company States
   const [companyModalOpen, setCompanyModalOpen] = useState(false);
@@ -104,6 +115,44 @@ export default function SuperAdminConsole() {
     setSuccessMessage(msg);
     confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
     setTimeout(() => setSuccessMessage(''), 3500);
+  };
+
+  // --- HANDLER GANTI PASSWORD SUPER ADMIN ---
+  const handleOpenPasswordModal = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+    setPasswordModalOpen(true);
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (!newPassword.trim()) {
+      setPasswordError('Password baru wajib diisi.');
+      return;
+    }
+    if (newPassword.trim().length < 4) {
+      setPasswordError('Password baru minimal 4 karakter.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Konfirmasi password tidak cocok dengan password baru.');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await changeSuperadminPassword(oldPassword, newPassword.trim());
+      setPasswordModalOpen(false);
+      showSuccess('Password Super Admin berhasil diperbarui! Gunakan password baru saat login.');
+    } catch (err) {
+      setPasswordError(err.message || 'Gagal mengubah password Super Admin.');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   // --- HANDLER COMPANY ---
@@ -320,6 +369,15 @@ export default function SuperAdminConsole() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenPasswordModal}
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 active:scale-95 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-amber-500/40 transition shadow-sm"
+              title="Ganti Password Superadmin"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+              <span>Ganti Password</span>
+            </button>
+
             <button
               onClick={loadData}
               disabled={loading}
@@ -965,6 +1023,126 @@ export default function SuperAdminConsole() {
                   className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-bold rounded-xl shadow-md transition"
                 >
                   {editingUser ? 'Simpan Perubahan' : 'Buat Akun'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL GANTI PASSWORD SUPER ADMIN                          */}
+      {/* ========================================================= */}
+      {passwordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl max-w-md w-full p-6 text-slate-100 relative animate-scaleUp">
+            <button
+              onClick={() => setPasswordModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-400">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-white">Ganti Password Super Admin</h3>
+                <p className="text-xs text-slate-400">
+                  Ubah kata sandi akun root <span className="text-amber-400 font-mono">@{session?.username || 'superadmintri'}</span>
+                </p>
+              </div>
+            </div>
+
+            {passwordError && (
+              <div className="mb-4 p-3 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{passwordError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Password Lama (Opsional)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showOldPass ? 'text' : 'password'}
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="Masukkan password saat ini"
+                    className="w-full px-3 py-2 pr-9 bg-slate-950/70 border border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 text-white placeholder:text-slate-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPass(!showOldPass)}
+                    className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-200"
+                  >
+                    {showOldPass ? <Lock className="w-3.5 h-3.5" /> : <KeyRound className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Password Baru <span className="text-amber-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimal 4 karakter"
+                    required
+                    className="w-full px-3 py-2 pr-9 bg-slate-950/70 border border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 text-white placeholder:text-slate-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-200"
+                  >
+                    {showNewPass ? <Lock className="w-3.5 h-3.5" /> : <KeyRound className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  Konfirmasi Password Baru <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Ulangi password baru"
+                  required
+                  className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 text-white placeholder:text-slate-500"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setPasswordModalOpen(false)}
+                  className="px-4 py-2 border border-slate-700 rounded-xl hover:bg-slate-800 font-semibold text-slate-300 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-bold rounded-xl shadow-md transition disabled:opacity-70 flex items-center gap-1.5"
+                >
+                  {passwordLoading ? (
+                    <span>Menyimpan...</span>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Simpan Password Baru</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

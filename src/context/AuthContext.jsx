@@ -254,6 +254,12 @@ export function AuthProvider({ children }) {
     });
   };
 
+  const changeSuperadminPassword = async (oldPassword, newPassword) => {
+    const currentUsername = session?.username || 'superadmintri';
+    const updated = await supabaseService.changeSuperadminPassword(currentUsername, oldPassword, newPassword);
+    return updated;
+  };
+
   // --- CRUD USER MANAGEMENT (DIRECT SUPABASE CLIENT) ---
   const companyUsers = allUsers;
 
@@ -366,6 +372,7 @@ export function AuthProvider({ children }) {
       login,
       loginWithGoogle,
       loginSuperadmin,
+      changeSuperadminPassword,
       logout,
       updateProfile,
       // User Management
