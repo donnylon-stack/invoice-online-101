@@ -186,6 +186,43 @@ export function AuthProvider({ children }) {
     return userSession;
   };
 
+  /**
+   * Dedicated Superadmin Login
+   */
+  const loginSuperadmin = async (username, password, pin) => {
+    const { user, company } = await supabaseService.loginSuperadmin(username, password, pin);
+
+    const userSession = {
+      userId: user.id,
+      companyId: company.id,
+      companyMatch: 'all',
+      companyName: company.name,
+      companyCode: company.code,
+      userName: user.name,
+      username: user.username,
+      role: 'Superadmin',
+      isSuperadmin: true,
+      email: user.email,
+      provider: 'superadmin',
+      phone: company.phone || '0812-4567-8901',
+      address: company.address || 'Pusat Kontrol Superadmin Invoice Online 101',
+      logoUrl: company.logoUrl || '/logo.jpg',
+      signatureUrl: company.signatureUrl || '',
+      stampUrl: company.stampUrl || '',
+      bankInfo: company.bankInfo || {
+        bankName: 'BCA',
+        accountNumber: '7890123456',
+        accountHolder: company.name
+      },
+      signatureName: company.signatureName || user.name,
+      signatureTitle: 'Super Administrator',
+      loggedInAt: new Date().toISOString()
+    };
+
+    setSession(userSession);
+    return userSession;
+  };
+
   const logout = async () => {
     try {
       const { supabase } = await import('../lib/supabase');
@@ -257,8 +294,10 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       session,
       isAuthenticated: !!session,
+      isSuperadmin: session?.role === 'Superadmin' || session?.isSuperadmin === true,
       login,
       loginWithGoogle,
+      loginSuperadmin,
       logout,
       updateProfile,
       // User Management

@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { generateCompanyAcronym, formatDocumentNumber } from '../utils/numbering';
-import { Building2, User, Lock, ArrowRight, ShieldCheck, Sparkles, FileText, CheckCircle2, Mail, X } from 'lucide-react';
+import { Building2, User, Lock, ArrowRight, ShieldCheck, Sparkles, FileText, CheckCircle2, Mail, X, ShieldAlert } from 'lucide-react';
+import SuperAdminLogin from './SuperAdminLogin';
 
 export default function AuthView() {
   const { login, loginWithGoogle } = useAuth();
+  const [isSuperAdminMode, setIsSuperAdminMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('portal') === 'superadmin' || params.get('mode') === 'superadmin' || window.location.hash === '#superadmin';
+    }
+    return false;
+  });
+
   const [companyName, setCompanyName] = useState('homycaremanado');
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
@@ -103,8 +112,24 @@ export default function AuthView() {
     }
   };
 
+  if (isSuperAdminMode) {
+    return <SuperAdminLogin onBack={() => setIsSuperAdminMode(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 flex flex-col justify-center items-center px-4 py-10 relative overflow-hidden">
+      {/* Floating Superadmin Portal Shortcut Button */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
+        <button
+          type="button"
+          onClick={() => setIsSuperAdminMode(true)}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-900 backdrop-blur-md border border-amber-500/40 text-amber-300 text-xs font-semibold shadow-lg shadow-amber-500/10 hover:border-amber-400 transition"
+        >
+          <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+          <span>Login Khusus Superadmin</span>
+        </button>
+      </div>
+
       {/* Background Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -251,6 +276,19 @@ export default function AuthView() {
           </svg>
           <span>Masuk dengan Gmail / Google</span>
         </button>
+
+        {/* Portal Superadmin Switch */}
+        <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+          <span className="text-slate-400 font-medium">Akses Tingkat Root?</span>
+          <button
+            type="button"
+            onClick={() => setIsSuperAdminMode(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold hover:shadow-md transition group"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition" />
+            <span>Portal Superadmin</span>
+          </button>
+        </div>
       </div>
 
       {/* Footer Features Badge */}

@@ -476,6 +476,137 @@ export const supabaseService = {
     };
   },
 
+  async loginSuperadmin(usernameInput, passwordInput, pinInput) {
+    const normUser = (usernameInput || '').trim().toLowerCase();
+    const cleanPassword = (passwordInput || '').trim();
+    const cleanPin = (pinInput || '').trim();
+
+    if (!normUser || !cleanPassword) {
+      throw new Error('Username atau Email dan Password Superadmin wajib diisi!');
+    }
+
+    // 1. Coba verifikasi dengan user di database Supabase
+    try {
+      const { data: users, error: userErr } = await supabase
+        .from('company_users')
+        .select('*');
+
+      if (!userErr && Array.isArray(users) && users.length > 0) {
+        const foundUser = users.find(u => {
+          const uName = (u.username || '').toLowerCase();
+          const uEmail = (u.email || '').toLowerCase();
+          const isSuperRole = (u.role || '').toLowerCase().includes('superadmin') || uName === 'superadmin';
+          return (uName === normUser || uEmail === normUser) && isSuperRole;
+        });
+
+        if (foundUser) {
+          if (foundUser.password !== cleanPassword) {
+            throw new Error('Password Superadmin salah! Silakan periksa kembali.');
+          }
+          if (foundUser.status && foundUser.status !== 'Aktif') {
+            throw new Error('Akun Superadmin ini sedang dinonaktifkan.');
+          }
+
+          const { data: companies } = await supabase.from('companies').select('*');
+          const comp = (companies && companies.find(c => c.id === foundUser.company_id)) || (companies && companies[0]) || {
+            id: '2f0a0fcc-3f65-482c-8e35-7271ecefa53d',
+            company_name: 'Homy Care Manado',
+            company_code: 'HCM'
+          };
+
+          return {
+            user: {
+              id: foundUser.id,
+              name: foundUser.name || 'Super Administrator',
+              username: foundUser.username,
+              role: 'Superadmin',
+              isSuperadmin: true,
+              email: foundUser.email || 'superadmin@invoiceonline101.id',
+              provider: 'superadmin'
+            },
+            company: {
+              id: comp.id,
+              name: comp.company_name,
+              code: comp.company_code,
+              phone: comp.phone || '0812-4567-8901',
+              email: comp.email || foundUser.email,
+              address: comp.address || 'Pusat Kontrol Superadmin Invoice Online 101',
+              bankInfo: {
+                bankName: comp.bank_name || 'BCA',
+                accountNumber: comp.account_number || '7890123456',
+                accountHolder: comp.company_name
+              },
+              signatureName: foundUser.name || 'Super Administrator',
+              signatureTitle: 'Lead Super Administrator',
+              logoUrl: comp.logo_url || '/logo.jpg',
+              signatureUrl: comp.signature_url || '',
+              stampUrl: comp.stamp_url || ''
+            }
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Superadmin query error:', e.message);
+    }
+
+    // 2. Fallback Master Superadmin Credentials
+    const validMasterUsernames = ['superadmin', 'admin@invoiceonline101.id', 'donnylon', 'donnylon-stack'];
+    const validMasterPasswords = ['superadmin101', 'admin101', 'donnylon101'];
+    const validMasterPins = ['101101', '999888', '123456'];
+
+    const isMasterUser = validMasterUsernames.includes(normUser);
+    const isMasterPass = validMasterPasswords.includes(cleanPassword);
+    const isMasterPin = !cleanPin || validMasterPins.includes(cleanPin) || cleanPin === '101101';
+
+    if (isMasterUser && isMasterPass) {
+      if (cleanPin && !isMasterPin) {
+        throw new Error('Kode PIN Keamanan Superadmin tidak sesuai!');
+      }
+
+      let comp = {
+        id: '2f0a0fcc-3f65-482c-8e35-7271ecefa53d',
+        company_name: 'Homy Care Manado',
+        company_code: 'HCM'
+      };
+      try {
+        const { data: companies } = await supabase.from('companies').select('*');
+        if (companies && companies.length > 0) comp = companies[0];
+      } catch (err) {}
+
+      return {
+        user: {
+          id: 'usr-superadmin-master',
+          name: 'Super Administrator Master',
+          username: normUser,
+          role: 'Superadmin',
+          isSuperadmin: true,
+          email: normUser.includes('@') ? normUser : 'superadmin@invoiceonline101.id',
+          provider: 'superadmin'
+        },
+        company: {
+          id: comp.id,
+          name: comp.company_name,
+          code: comp.company_code,
+          phone: comp.phone || '0812-4567-8901',
+          email: comp.email || 'superadmin@invoiceonline101.id',
+          address: comp.address || 'Pusat Kontrol Superadmin Invoice Online 101',
+          bankInfo: {
+            bankName: comp.bank_name || 'BCA',
+            accountNumber: comp.account_number || '7890123456',
+            accountHolder: comp.company_name
+          },
+          signatureName: 'Super Administrator',
+          signatureTitle: 'Root System Controller',
+          logoUrl: comp.logo_url || '/logo.jpg',
+          signatureUrl: comp.signature_url || '',
+          stampUrl: comp.stamp_url || ''
+        }
+      };
+    }
+
+    throw new Error('Kredensial Superadmin tidak valid! Pastikan Username dan Password khusus Superadmin sesuai.');
+  },
+
   // Company Profile Update in Supabase
   async updateCompanyProfile(companyCode, profileData) {
     try {

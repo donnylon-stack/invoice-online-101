@@ -127,7 +127,14 @@ export default function Navbar({ activeTab, setActiveTab, onOpenCreate }) {
             {/* User Details & Logout */}
             <div className="flex items-center gap-2 border-l border-slate-200 pl-2 sm:pl-3">
               <div className="text-right hidden sm:block">
-                <div className="text-xs font-bold text-slate-800 leading-tight">{session?.userName}</div>
+                <div className="text-xs font-bold text-slate-800 leading-tight flex items-center justify-end gap-1.5">
+                  <span>{session?.userName}</span>
+                  {session?.isSuperadmin && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-sm">
+                      👑 Superadmin
+                    </span>
+                  )}
+                </div>
                 <div className="text-[10px] text-slate-400 leading-tight">{session?.companyName}</div>
               </div>
               <button
