@@ -760,7 +760,6 @@ export const supabaseService = {
       console.warn('deleteCompany Supabase warning:', e.message);
       return false;
     }
->>>>>>> a2291ce (feat: add super admin login portal and company CRUD management)
   },
 
   // Company Profile Update in Supabase
